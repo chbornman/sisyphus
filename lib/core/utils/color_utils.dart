@@ -4,13 +4,8 @@ import '../constants/app_constants.dart';
 /// Utility functions for color manipulation and happiness score visualization
 class ColorUtils {
   /// Calculate opacity based on happiness score
-  /// Score ranges map to opacity levels:
-  /// 0: 0.0 (transparent)
-  /// 1-20: 0.2
-  /// 21-40: 0.4
-  /// 41-60: 0.6
-  /// 61-80: 0.8
-  /// 81-100: 1.0 (fully opaque)
+  /// Linear interpolation from 0 (transparent) to 100 (fully opaque)
+  /// Each point increases opacity by 1%
   static double scoreToOpacity(int score) {
     if (score < AppConstants.minHappinessScore ||
         score > AppConstants.maxHappinessScore) {
@@ -19,9 +14,10 @@ class ColorUtils {
 
     if (score == 0) return 0.0;
 
-    // Calculate which quintile the score falls into (20% increments)
-    final quintile = ((score - 1) ~/ 20) + 1; // 1-5
-    return (quintile * 0.2).clamp(0.2, 1.0);
+    // Linear interpolation: score 1-100 maps to opacity 0.2-1.0
+    // This gives a minimum visible opacity of 20% for score of 1
+    // and 100% opacity for score of 100
+    return (0.2 + (score / 100) * 0.8).clamp(0.2, 1.0);
   }
 
   /// Apply opacity to a color based on happiness score

@@ -24,10 +24,23 @@ class Timeslots extends _$Timeslots {
     final date = ref.read(selectedDateProvider);
     final dbService = ref.read(databaseServiceProvider);
 
-    await dbService.updateHappinessScore(date, timeIndex, score);
+    // Optimistically update state first
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      final updatedSlots = currentState.map((slot) {
+        if (slot.timeIndex == timeIndex) {
+          return slot.copyWith(
+            happinessScore: score,
+            updatedAt: DateTime.now(),
+          );
+        }
+        return slot;
+      }).toList();
+      state = AsyncValue.data(updatedSlots);
+    }
 
-    // Refresh timeslots
-    ref.invalidateSelf();
+    // Then save to database in background
+    await dbService.updateHappinessScore(date, timeIndex, score);
   }
 
   /// Update description for a timeslot
@@ -35,10 +48,23 @@ class Timeslots extends _$Timeslots {
     final date = ref.read(selectedDateProvider);
     final dbService = ref.read(databaseServiceProvider);
 
-    await dbService.updateDescription(date, timeIndex, description);
+    // Optimistically update state first
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      final updatedSlots = currentState.map((slot) {
+        if (slot.timeIndex == timeIndex) {
+          return slot.copyWith(
+            description: description,
+            updatedAt: DateTime.now(),
+          );
+        }
+        return slot;
+      }).toList();
+      state = AsyncValue.data(updatedSlots);
+    }
 
-    // Refresh timeslots
-    ref.invalidateSelf();
+    // Then save to database in background
+    await dbService.updateDescription(date, timeIndex, description);
   }
 
   /// Update both score and description in one transaction
@@ -46,15 +72,27 @@ class Timeslots extends _$Timeslots {
     final date = ref.read(selectedDateProvider);
     final dbService = ref.read(databaseServiceProvider);
 
-    // Update score and description separately
-    // We could optimize this with a single database call in the future
+    // Optimistically update state first
+    final currentState = state.valueOrNull;
+    if (currentState != null) {
+      final updatedSlots = currentState.map((slot) {
+        if (slot.timeIndex == timeIndex) {
+          return slot.copyWith(
+            happinessScore: score,
+            description: description,
+            updatedAt: DateTime.now(),
+          );
+        }
+        return slot;
+      }).toList();
+      state = AsyncValue.data(updatedSlots);
+    }
+
+    // Then save to database in background
     await dbService.updateHappinessScore(date, timeIndex, score);
     if (description != null && description.isNotEmpty) {
       await dbService.updateDescription(date, timeIndex, description);
     }
-
-    // Refresh timeslots
-    ref.invalidateSelf();
   }
 }
 
