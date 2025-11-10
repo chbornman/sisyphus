@@ -238,11 +238,7 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
         color: widget.isCurrentSlot
             ? Colors.white
             : theme.colorScheme.onSurface.withValues(
-                alpha: widget.isFuture
-                    ? 0.3
-                    : widget.isOutsideNotificationHours
-                        ? 0.4
-                        : 0.6,
+                alpha: widget.isFuture ? 0.3 : 0.6,
               ),
       ),
       textAlign: TextAlign.center,
@@ -319,9 +315,7 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
     return Text(
       widget.timeslot.description!,
       style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurface.withValues(
-          alpha: widget.isOutsideNotificationHours ? 0.4 : 0.9,
-        ),
+        color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
