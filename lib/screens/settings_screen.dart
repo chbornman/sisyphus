@@ -34,9 +34,7 @@ class SettingsScreen extends ConsumerWidget {
               SizedBox(height: AppTheme.spacing2),
 
               // Notification toggle
-              _NotificationToggle(
-                enabled: settings.notificationsEnabled,
-              ),
+              _NotificationToggle(enabled: settings.notificationsEnabled),
               SizedBox(height: AppTheme.spacing2),
 
               // Time range pickers (only show if notifications enabled)
@@ -52,12 +50,12 @@ class SettingsScreen extends ConsumerWidget {
               _buildSectionHeader('Appearance', theme),
               SizedBox(height: AppTheme.spacing2),
 
-              // Accent color picker
-              _AccentColorPicker(currentColor: settings.accentColor),
-              SizedBox(height: AppTheme.spacing2),
-
               // Time format toggle
               _TimeFormatToggle(currentFormat: settings.timeFormat),
+              SizedBox(height: AppTheme.spacing2),
+
+              // Accent color picker
+              _AccentColorPicker(currentColor: settings.accentColor),
               SizedBox(height: AppTheme.spacing2),
 
               // Theme toggle
@@ -139,10 +137,7 @@ class _ThemeToggle extends ConsumerWidget {
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: AppTheme.spacing2),
-                Text(
-                  'Theme',
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text('Theme', style: theme.textTheme.titleMedium),
               ],
             ),
             SizedBox(height: AppTheme.spacing2),
@@ -167,7 +162,9 @@ class _ThemeToggle extends ConsumerWidget {
                 ],
                 selected: {currentTheme},
                 onSelectionChanged: (Set<ThemeMode> newSelection) {
-                  ref.read(settingsProvider.notifier).updateTheme(newSelection.first);
+                  ref
+                      .read(settingsProvider.notifier)
+                      .updateTheme(newSelection.first);
                 },
               ),
             ),
@@ -215,10 +212,7 @@ class _AccentColorPicker extends ConsumerWidget {
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: AppTheme.spacing2),
-                Text(
-                  'Accent Color',
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text('Accent Color', style: theme.textTheme.titleMedium),
               ],
             ),
             SizedBox(height: AppTheme.spacing2),
@@ -228,36 +222,39 @@ class _AccentColorPicker extends ConsumerWidget {
                 runSpacing: AppTheme.spacing2,
                 alignment: WrapAlignment.center,
                 children: _colorPalette.map((color) {
-                // Compare colors using toARGB32()
-                final isSelected = color.toARGB32() == currentColor.toARGB32();
-                return GestureDetector(
-                  onTap: () {
-                    ref.read(settingsProvider.notifier).updateAccentColor(color);
-                  },
-                  child: Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                      border: isSelected
-                          ? Border.all(
-                              // Use subtle border matching home screen timeslot items
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                              width: 3,
-                            )
+                  // Compare colors using toARGB32()
+                  final isSelected =
+                      color.toARGB32() == currentColor.toARGB32();
+                  return GestureDetector(
+                    onTap: () {
+                      ref
+                          .read(settingsProvider.notifier)
+                          .updateAccentColor(color);
+                    },
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.borderRadius,
+                        ),
+                        border: isSelected
+                            ? Border.all(
+                                // Use subtle border matching home screen timeslot items
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.3,
+                                ),
+                                width: 3,
+                              )
+                            : null,
+                      ),
+                      child: isSelected
+                          ? Icon(Icons.check, color: Colors.white, size: 32)
                           : null,
                     ),
-                    child: isSelected
-                        ? Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 32,
-                          )
-                        : null,
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
               ),
             ),
           ],
@@ -291,10 +288,7 @@ class _TimeFormatToggle extends ConsumerWidget {
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: AppTheme.spacing2),
-                Text(
-                  'Time Format',
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text('Time Format', style: theme.textTheme.titleMedium),
               ],
             ),
             SizedBox(height: AppTheme.spacing2),
@@ -312,7 +306,9 @@ class _TimeFormatToggle extends ConsumerWidget {
                 ],
                 selected: {currentFormat},
                 onSelectionChanged: (Set<TimeFormat> newSelection) {
-                  ref.read(settingsProvider.notifier).updateTimeFormat(newSelection.first);
+                  ref
+                      .read(settingsProvider.notifier)
+                      .updateTimeFormat(newSelection.first);
                 },
               ),
             ),
@@ -331,15 +327,46 @@ class _NotificationToggle extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
     return Card(
-      child: SwitchListTile(
-        value: enabled,
-        onChanged: (value) {
-          ref.read(settingsProvider.notifier).toggleNotifications(value);
-        },
-        title: const Text('Enable Reminders'),
-        subtitle: const Text('Get notified every 30 minutes to track your happiness'),
-        secondary: const Icon(Icons.notifications_outlined),
+      child: Padding(
+        padding: EdgeInsets.all(AppTheme.spacing2),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.notifications_outlined,
+                  size: 20,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                SizedBox(width: AppTheme.spacing2),
+                Text('Enable Reminders', style: theme.textTheme.titleMedium),
+                const Spacer(),
+                Switch(
+                  value: enabled,
+                  onChanged: (value) {
+                    ref
+                        .read(settingsProvider.notifier)
+                        .toggleNotifications(value);
+                  },
+                ),
+              ],
+            ),
+            SizedBox(height: AppTheme.spacing1),
+            Padding(
+              padding: EdgeInsets.only(left: 20 + AppTheme.spacing2),
+              child: Text(
+                'Get notified every 30 minutes to track your happiness',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -375,10 +402,7 @@ class _TimeRangePicker extends ConsumerWidget {
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
                 SizedBox(width: AppTheme.spacing2),
-                Text(
-                  'Notification Hours',
-                  style: theme.textTheme.titleMedium,
-                ),
+                Text('Notification Hours', style: theme.textTheme.titleMedium),
               ],
             ),
             SizedBox(height: AppTheme.spacing2),
@@ -393,10 +417,9 @@ class _TimeRangePicker extends ConsumerWidget {
                   timeFormat: timeFormat,
                   maxIndex: endHour, // Don't show times >= end time
                   onChanged: (newStartHour) {
-                    ref.read(settingsProvider.notifier).updateNotificationHours(
-                      newStartHour,
-                      endHour,
-                    );
+                    ref
+                        .read(settingsProvider.notifier)
+                        .updateNotificationHours(newStartHour, endHour);
                   },
                 ),
                 Padding(
@@ -414,10 +437,9 @@ class _TimeRangePicker extends ConsumerWidget {
                   timeFormat: timeFormat,
                   minIndex: startHour + 1, // Don't show times <= start time
                   onChanged: (newEndHour) {
-                    ref.read(settingsProvider.notifier).updateNotificationHours(
-                      startHour,
-                      newEndHour,
-                    );
+                    ref
+                        .read(settingsProvider.notifier)
+                        .updateNotificationHours(startHour, newEndHour);
                   },
                 ),
               ],
@@ -472,10 +494,7 @@ class _HourPickerState extends State<_HourPicker> {
     // Build list of valid time indices based on min/max constraints
     final minIdx = widget.minIndex ?? 0;
     final maxIdx = widget.maxIndex ?? 48;
-    final validIndices = List.generate(
-      maxIdx - minIdx,
-      (i) => minIdx + i,
-    );
+    final validIndices = List.generate(maxIdx - minIdx, (i) => minIdx + i);
 
     // Find initial scroll position
     final initialScrollIndex = validIndices.indexOf(widget.hour);
@@ -523,12 +542,20 @@ class _HourPickerState extends State<_HourPicker> {
                     Center(
                       child: Container(
                         height: 50,
-                        margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing3),
+                        margin: EdgeInsets.symmetric(
+                          horizontal: AppTheme.spacing3,
+                        ),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                          color: theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.3,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.borderRadius,
+                          ),
                           border: Border.all(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                            color: theme.colorScheme.primary.withValues(
+                              alpha: 0.4,
+                            ),
                             width: 2,
                           ),
                         ),
@@ -541,7 +568,10 @@ class _HourPickerState extends State<_HourPicker> {
                       diameterRatio: 1.2,
                       physics: const FixedExtentScrollPhysics(),
                       controller: FixedExtentScrollController(
-                        initialItem: initialScrollIndex.clamp(0, validIndices.length - 1),
+                        initialItem: initialScrollIndex.clamp(
+                          0,
+                          validIndices.length - 1,
+                        ),
                       ),
                       onSelectedItemChanged: (wheelIndex) {
                         // Map wheel index to actual time index
@@ -553,7 +583,10 @@ class _HourPickerState extends State<_HourPicker> {
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
                         builder: (context, wheelIndex) {
-                          if (wheelIndex < 0 || wheelIndex >= validIndices.length) return null;
+                          if (wheelIndex < 0 ||
+                              wheelIndex >= validIndices.length) {
+                            return null;
+                          }
                           final timeIndex = validIndices[wheelIndex];
                           final isSelected = timeIndex == tempSelectedIndex;
                           return Center(
@@ -562,8 +595,12 @@ class _HourPickerState extends State<_HourPicker> {
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 color: isSelected
                                     ? theme.colorScheme.primary
-                                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    : theme.colorScheme.onSurface.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
                               ),
                             ),
                           );
