@@ -1,6 +1,6 @@
-# happy_tracks
+# Sisyphus
 
-A new Flutter project.
+A Flutter happiness tracking app.
 
 ## Getting Started
 

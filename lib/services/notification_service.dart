@@ -2,8 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:happy_tracks/core/utils/time_utils.dart';
-import 'package:happy_tracks/models/app_settings.dart';
+import 'package:sisyphus/core/utils/time_utils.dart';
+import 'package:sisyphus/models/app_settings.dart';
 
 /// Service for managing local notifications
 /// Handles scheduling, permissions, and half-hourly happiness tracking reminders

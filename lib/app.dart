@@ -5,8 +5,8 @@ import 'screens/home_screen.dart';
 
 /// Root app widget
 /// Sets up theme and routing
-class HappyTracksApp extends ConsumerWidget {
-  const HappyTracksApp({super.key});
+class SisyphusApp extends ConsumerWidget {
+  const SisyphusApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -16,7 +16,7 @@ class HappyTracksApp extends ConsumerWidget {
     final themeModeValue = ref.watch(themeModeProvider);
 
     return MaterialApp(
-      title: 'HappyTracks',
+      title: 'Sisyphus',
       debugShowCheckedModeBanner: false,
 
       // Theme configuration

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:happy_tracks/core/constants/app_constants.dart';
-import 'package:happy_tracks/core/utils/color_utils.dart';
+import 'package:sisyphus/core/constants/app_constants.dart';
+import 'package:sisyphus/core/utils/color_utils.dart';
 
 /// Time format preference
 enum TimeFormat {

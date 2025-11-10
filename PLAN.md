@@ -1,10 +1,10 @@
-# HappyTracks Implementation Plan
+# Sisyphus Implementation Plan
 
 A Flutter application for tracking happiness throughout the day with half-hour timeslots.
 
 ## Overview
 
-HappyTracks allows users to track their happiness score (0-100) every half hour throughout the day. Users can drag horizontally on timeslots to set scores, add descriptions of activities, and visualize patterns over time through a heatmap and calendar views.
+Sisyphus allows users to track their happiness score (0-100) every half hour throughout the day. Users can drag horizontally on timeslots to set scores, add descriptions of activities, and visualize patterns over time through a heatmap and calendar views.
 
 ## Core Features
 

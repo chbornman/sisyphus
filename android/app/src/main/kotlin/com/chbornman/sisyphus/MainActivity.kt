@@ -1,4 +1,4 @@
-package com.happytracks.happy_tracks
+package com.chbornman.sisyphus
 
 import io.flutter.embedding.android.FlutterActivity
 

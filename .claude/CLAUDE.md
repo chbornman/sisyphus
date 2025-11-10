@@ -1,8 +1,8 @@
-# HappyTracks Project Guidelines
+# Sisyphus Project Guidelines
 
 ## Project Overview
 
-HappyTracks is a Flutter happiness tracking app that helps users monitor their emotional well-being throughout the day using 48 half-hour timeslots (00:00 - 23:30).
+Sisyphus is a Flutter happiness tracking app that helps users monitor their emotional well-being throughout the day using 48 half-hour timeslots (00:00 - 23:30).
 
 **Tech Stack:**
 - Flutter (Material 3)

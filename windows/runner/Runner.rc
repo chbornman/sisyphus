@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.happytracks" "\0"
-            VALUE "FileDescription", "happy_tracks" "\0"
+            VALUE "CompanyName", "com.chbornman" "\0"
+            VALUE "FileDescription", "sisyphus" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "happy_tracks" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.happytracks. All rights reserved." "\0"
-            VALUE "OriginalFilename", "happy_tracks.exe" "\0"
-            VALUE "ProductName", "happy_tracks" "\0"
+            VALUE "InternalName", "sisyphus" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2025 com.chbornman. All rights reserved." "\0"
+            VALUE "OriginalFilename", "sisyphus.exe" "\0"
+            VALUE "ProductName", "sisyphus" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

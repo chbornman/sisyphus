@@ -1,4 +1,4 @@
-import 'package:happy_tracks/core/constants/app_constants.dart';
+import 'package:sisyphus/core/constants/app_constants.dart';
 
 /// Represents a single timeslot entry for happiness tracking
 /// Each timeslot covers a 30-minute period in a day

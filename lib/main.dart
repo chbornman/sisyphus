@@ -28,7 +28,7 @@ Future<void> main() async {
   await _autoRescheduleNotifications(notificationService);
 
   // Run app with Riverpod
-  runApp(const ProviderScope(child: HappyTracksApp()));
+  runApp(const ProviderScope(child: SisyphusApp()));
 }
 
 /// Automatically reschedule notifications on app startup if enabled

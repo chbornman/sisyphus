@@ -1,5 +1,5 @@
-name: happy_tracks
-description: "Sisyphus - Happiness Tracker. Track your happiness throughout the day, every half hour."
+name: sisyphus
+description: "Sisyphus - Track your happiness throughout the day, every half hour."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

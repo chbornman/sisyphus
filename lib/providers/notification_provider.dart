@@ -1,5 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:happy_tracks/services/notification_service.dart';
+import 'package:sisyphus/services/notification_service.dart';
 
 part 'notification_provider.g.dart';
 
