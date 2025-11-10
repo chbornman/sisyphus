@@ -9,9 +9,5 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Run app with Riverpod
-  runApp(
-    const ProviderScope(
-      child: HappyTracksApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: HappyTracksApp()));
 }

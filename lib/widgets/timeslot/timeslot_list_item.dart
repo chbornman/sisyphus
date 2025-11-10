@@ -125,36 +125,13 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
     final displayScore = _draggingScore ?? widget.timeslot.happinessScore;
     final scoreColor = ColorUtils.getTimeslotColor(accentColor, displayScore);
 
-    // Wrap entire timeslot in AnimatedBuilder for subtle pulse effect
-    return AnimatedBuilder(
-      animation: _currentSlotAnimationController,
-      builder: (context, child) {
-        // Calculate subtle glow opacity for current slot
-        final glowOpacity = widget.isCurrentSlot
-            ? _fadeAnimation.value * 0.1
-            : 0.0;
-
-        return Container(
-          height: AppTheme.timeslotHeight,
-          margin: EdgeInsets.symmetric(
-            horizontal: AppTheme.spacing4,
-            vertical: AppTheme.spacing1,
-          ),
-          decoration: widget.isCurrentSlot
-              ? BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                  boxShadow: [
-                    BoxShadow(
-                      color: accentColor.withValues(alpha: glowOpacity),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                )
-              : null,
-          child: child,
-        );
-      },
+    // Wrap entire timeslot for consistent layout
+    return Container(
+      height: AppTheme.timeslotHeight,
+      margin: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing4,
+        vertical: AppTheme.spacing1,
+      ),
       child: Row(
         children: [
           // Time label
