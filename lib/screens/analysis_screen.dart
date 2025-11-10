@@ -281,6 +281,50 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           );
         }
 
+        // Show message if fewer than 5 timeslots tracked
+        if (allMoments.length < 5) {
+          return Container(
+            height: 200,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+              border: Border.all(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+            padding: EdgeInsets.all(AppTheme.spacing4),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.auto_awesome,
+                    size: 48,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                  ),
+                  SizedBox(height: AppTheme.spacing3),
+                  Text(
+                    'Check back once you\'ve logged 5 timeslots',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: AppTheme.spacing2),
+                  Text(
+                    'Track your happiness throughout the day to see your top and bottom moments',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
         // Sort and take top/bottom 5
         final moments = _showTopMoments
             ? (allMoments..sort((a, b) => b.happinessScore.compareTo(a.happinessScore)))
