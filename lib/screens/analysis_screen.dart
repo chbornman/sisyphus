@@ -298,10 +298,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.auto_awesome,
-                    size: 48,
-                    color: theme.colorScheme.primary.withValues(alpha: 0.5),
+                  Image.asset(
+                    'assets/app_icon.png',
+                    width: 64,
+                    height: 64,
+                    opacity: AlwaysStoppedAnimation(0.5),
                   ),
                   SizedBox(height: AppTheme.spacing3),
                   Text(
