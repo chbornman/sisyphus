@@ -37,37 +37,53 @@ class Settings extends _$Settings {
   }
 
   /// Toggle notifications on/off
+  /// Uses optimistic updates for instant UI feedback
   Future<void> toggleNotifications(bool enabled) async {
     final dbService = ref.read(databaseServiceProvider);
     final notificationService = ref.read(notificationServiceProvider);
 
-    // Update database first
+    // OPTIMISTIC UPDATE: Update UI state immediately
+    // Get current state and create updated version
+    final currentState = await future;
+    state = AsyncValue.data(currentState.copyWith(
+      notificationsEnabled: enabled,
+    ));
+
+    // Update database in background
     await dbService.updateSetting('notifications_enabled', enabled.toString());
 
     if (enabled) {
-      // Request permissions and schedule notifications
+      // Request permissions (this shows dialog, but UI is already updated)
       final hasPermission = await notificationService.requestPermissions();
+
       if (hasPermission) {
+        // Schedule notifications in background (don't await)
         // Get current settings to know the time range
         final settings = await dbService.getSettings();
-        await notificationService.scheduleNotifications(
+
+        // Fire and forget - schedule notifications without blocking
+        // This prevents UI from freezing while scheduling 100+ notifications
+        notificationService.scheduleNotifications(
           startIndex: settings.notificationStartHour,
           endIndex: settings.notificationEndHour,
-        );
+        ).catchError((error) {
+          // Log error but don't crash the app
+          // The notifications will be rescheduled next time the app starts
+          debugPrint('Error scheduling notifications: $error');
+        });
       } else {
-        // Permission denied - revert the setting
+        // Permission denied - revert the optimistic update
         await dbService.updateSetting('notifications_enabled', 'false');
+        ref.invalidateSelf();
       }
     } else {
-      // Cancel all notifications when disabled
+      // Cancel all notifications (quick operation, safe to await)
       await notificationService.cancelAllNotifications();
     }
-
-    // Refresh state
-    ref.invalidateSelf();
   }
 
   /// Update notification time range (now uses time indices 0-47)
+  /// Uses optimistic updates for instant UI feedback
   Future<void> updateNotificationHours(int startIndex, int endIndex) async {
     if (startIndex < 0 || startIndex > 47 || endIndex < 0 || endIndex > 47) {
       throw ArgumentError('Time indices must be between 0 and 47');
@@ -80,6 +96,13 @@ class Settings extends _$Settings {
     final dbService = ref.read(databaseServiceProvider);
     final notificationService = ref.read(notificationServiceProvider);
 
+    // OPTIMISTIC UPDATE: Update UI state immediately
+    final currentState = await future;
+    state = AsyncValue.data(currentState.copyWith(
+      notificationStartHour: startIndex,
+      notificationEndHour: endIndex,
+    ));
+
     // Update database
     await dbService.updateSettings({
       'notification_start_hour': startIndex.toString(),
@@ -89,14 +112,14 @@ class Settings extends _$Settings {
     // Reschedule notifications if they're currently enabled
     final settings = await dbService.getSettings();
     if (settings.notificationsEnabled) {
-      await notificationService.rescheduleNotifications(
+      // Fire and forget - reschedule without blocking UI
+      notificationService.rescheduleNotifications(
         startIndex: startIndex,
         endIndex: endIndex,
-      );
+      ).catchError((error) {
+        debugPrint('Error rescheduling notifications: $error');
+      });
     }
-
-    // Refresh state
-    ref.invalidateSelf();
   }
 
   /// Update time format preference
