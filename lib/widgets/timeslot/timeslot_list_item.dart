@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_theme.dart';
 import '../../core/utils/color_utils.dart';
+import '../../core/utils/time_utils.dart';
+import '../../models/app_settings.dart';
 import '../../models/timeslot.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/timeslot_provider.dart';
@@ -13,51 +15,150 @@ class TimeslotListItem extends ConsumerStatefulWidget {
   final Timeslot timeslot;
   final bool isCurrentSlot;
   final bool isFuture;
+  final bool isOutsideNotificationHours;
 
   const TimeslotListItem({
     super.key,
     required this.timeslot,
     this.isCurrentSlot = false,
     this.isFuture = false,
+    this.isOutsideNotificationHours = false,
   });
 
   @override
   ConsumerState<TimeslotListItem> createState() => _TimeslotListItemState();
 }
 
-class _TimeslotListItemState extends ConsumerState<TimeslotListItem> {
+class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
+    with SingleTickerProviderStateMixin {
   // Track temporary score during drag
   int? _draggingScore;
   // Track starting values for relative drag
   int? _dragStartScore;
   double? _dragStartX;
 
+  // Animation controller for current timeslot transition
+  late AnimationController _currentSlotAnimationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  // Track previous isCurrentSlot state to detect changes
+  bool _wasCurrentSlot = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _wasCurrentSlot = widget.isCurrentSlot;
+
+    // Initialize animation controller
+    _currentSlotAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Scale animation: 1.0 -> 1.1 -> 1.0 (subtle pop)
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.15)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 30.0,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.15, end: 1.0)
+            .chain(CurveTween(curve: Curves.elasticOut)),
+        weight: 70.0,
+      ),
+    ]).animate(_currentSlotAnimationController);
+
+    // Fade animation: 0.0 -> 1.0 (fade in)
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _currentSlotAnimationController,
+        curve: Curves.easeIn,
+      ),
+    );
+
+    // If this is already the current slot on init, show it immediately
+    if (widget.isCurrentSlot) {
+      _currentSlotAnimationController.value = 1.0;
+    }
+  }
+
+  @override
+  void didUpdateWidget(TimeslotListItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Detect when this timeslot becomes current
+    if (widget.isCurrentSlot && !_wasCurrentSlot) {
+      // Just became current - trigger animation
+      _currentSlotAnimationController.forward(from: 0.0);
+    }
+
+    _wasCurrentSlot = widget.isCurrentSlot;
+  }
+
+  @override
+  void dispose() {
+    _currentSlotAnimationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final settingsAsync = ref.watch(settingsProvider);
     final theme = Theme.of(context);
 
-    // Get accent color from settings, or use default
+    // Get settings values, or use defaults
     final accentColor = settingsAsync.when(
       data: (settings) => settings.accentColor,
       loading: () => theme.colorScheme.primary,
       error: (_, __) => theme.colorScheme.primary,
     );
 
+    final timeFormat = settingsAsync.when(
+      data: (settings) => settings.timeFormat,
+      loading: () => TimeFormat.twelveHour,
+      error: (_, __) => TimeFormat.twelveHour,
+    );
+
     // Use dragging score if actively dragging, otherwise use saved score
     final displayScore = _draggingScore ?? widget.timeslot.happinessScore;
     final scoreColor = ColorUtils.getTimeslotColor(accentColor, displayScore);
 
-    return Container(
-      height: AppTheme.timeslotHeight,
-      margin: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing4,
-        vertical: AppTheme.spacing1,
-      ),
+    // Wrap entire timeslot in AnimatedBuilder for subtle pulse effect
+    return AnimatedBuilder(
+      animation: _currentSlotAnimationController,
+      builder: (context, child) {
+        // Calculate subtle glow opacity for current slot
+        final glowOpacity = widget.isCurrentSlot
+            ? _fadeAnimation.value * 0.1
+            : 0.0;
+
+        return Container(
+          height: AppTheme.timeslotHeight,
+          margin: EdgeInsets.symmetric(
+            horizontal: AppTheme.spacing4,
+            vertical: AppTheme.spacing1,
+          ),
+          decoration: widget.isCurrentSlot
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: glowOpacity),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                )
+              : null,
+          child: child,
+        );
+      },
       child: Row(
         children: [
           // Time label
-          _buildTimeLabel(theme),
+          _buildTimeLabel(theme, timeFormat),
 
           SizedBox(width: AppTheme.spacing2),
 
@@ -74,10 +175,12 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem> {
                 decoration: BoxDecoration(
                   color: widget.isFuture
                       ? theme.colorScheme.onSurface.withValues(alpha: 0.05)
-                      : scoreColor,
+                      : widget.isOutsideNotificationHours
+                          ? scoreColor.withValues(alpha: scoreColor.a * 0.3)
+                          : scoreColor,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                   border: Border.all(
-                    color: theme.dividerColor,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                     width: AppTheme.borderWidth,
                   ),
                 ),
@@ -115,28 +218,14 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem> {
                         child: Text(
                           widget.isFuture
                               ? 'Future timeslot'
-                              : 'Drag to score • Tap to add note',
+                              : widget.isOutsideNotificationHours
+                                  ? 'Outside notification hours'
+                                  : 'Drag to score • Tap to add note',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withValues(
-                              alpha: widget.isFuture ? 0.3 : 0.4,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    // Current time indicator
-                    if (widget.isCurrentSlot)
-                      Positioned(
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 3,
-                          decoration: BoxDecoration(
-                            color: accentColor,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(AppTheme.borderRadius),
-                              bottomLeft: Radius.circular(AppTheme.borderRadius),
+                              alpha: widget.isFuture || widget.isOutsideNotificationHours
+                                  ? 0.3
+                                  : 0.4,
                             ),
                           ),
                         ),
@@ -151,26 +240,77 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem> {
     );
   }
 
-  /// Build time label (e.g., "09:00", "09:30")
-  Widget _buildTimeLabel(ThemeData theme) {
-    return SizedBox(
-      width: 60,
-      child: Text(
-        widget.timeslot.time,
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: widget.isCurrentSlot ? FontWeight.w600 : FontWeight.normal,
-          color: widget.isCurrentSlot
-              ? theme.colorScheme.primary
-              : theme.colorScheme.onSurface.withValues(
-                  alpha: widget.isFuture ? 0.3 : 0.6,
-                ),
-        ),
-        textAlign: TextAlign.right,
+  /// Build time label (e.g., "09:00", "9:00 AM")
+  /// Format depends on user's time format preference
+  Widget _buildTimeLabel(ThemeData theme, TimeFormat timeFormat) {
+    final formattedTime = TimeUtils.formatTimeForDisplay(
+      widget.timeslot.timeIndex,
+      timeFormat,
+    );
+
+    // Get accent color from settings for current slot indicator
+    final accentColor = ref.watch(settingsProvider).when(
+      data: (settings) => settings.accentColor,
+      loading: () => theme.colorScheme.primary,
+      error: (_, __) => theme.colorScheme.primary,
+    );
+
+    final timeLabel = Text(
+      formattedTime,
+      style: theme.textTheme.bodySmall?.copyWith(
+        fontWeight: widget.isCurrentSlot ? FontWeight.w600 : FontWeight.normal,
+        color: widget.isCurrentSlot
+            ? Colors.white
+            : theme.colorScheme.onSurface.withValues(
+                alpha: widget.isFuture
+                    ? 0.3
+                    : widget.isOutsideNotificationHours
+                        ? 0.4
+                        : 0.6,
+              ),
       ),
+      textAlign: TextAlign.center,
+    );
+
+    final content = widget.isCurrentSlot
+        ? Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: AppTheme.spacing1,
+              vertical: AppTheme.spacing1,
+            ),
+            decoration: BoxDecoration(
+              color: accentColor,
+              borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+            ),
+            child: timeLabel,
+          )
+        : Padding(
+            padding: EdgeInsets.symmetric(vertical: AppTheme.spacing1),
+            child: timeLabel,
+          );
+
+    return SizedBox(
+      width: timeFormat == TimeFormat.twelveHour ? 75 : 60,
+      child: widget.isCurrentSlot
+          ? AnimatedBuilder(
+              animation: _currentSlotAnimationController,
+              builder: (context, child) {
+                return Transform.scale(
+                  scale: _scaleAnimation.value,
+                  child: Opacity(
+                    opacity: _fadeAnimation.value,
+                    child: child,
+                  ),
+                );
+              },
+              child: content,
+            )
+          : content,
     );
   }
 
   /// Build score badge showing happiness number
+  /// Fixed width to prevent size changes as digits increase
   Widget _buildScoreBadge(int score, ThemeData theme) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -181,14 +321,18 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem> {
         color: theme.colorScheme.surface.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(AppTheme.borderRadius),
         border: Border.all(
-          color: theme.dividerColor,
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
           width: AppTheme.borderWidth,
         ),
       ),
-      child: Text(
-        score.toString(),
-        style: theme.textTheme.labelLarge?.copyWith(
-          fontWeight: FontWeight.bold,
+      child: SizedBox(
+        width: 32, // Fixed width to accommodate "100"
+        child: Text(
+          score.toString(),
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -199,7 +343,9 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem> {
     return Text(
       widget.timeslot.description!,
       style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+        color: theme.colorScheme.onSurface.withValues(
+          alpha: widget.isOutsideNotificationHours ? 0.4 : 0.9,
+        ),
       ),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,

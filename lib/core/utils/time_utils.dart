@@ -1,3 +1,4 @@
+import '../../models/app_settings.dart';
 import '../constants/app_constants.dart';
 
 /// Utility functions for timeslot calculations
@@ -55,5 +56,29 @@ class TimeUtils {
       AppConstants.timeSlotsPerDay,
       (index) => indexToTime(index),
     );
+  }
+
+  /// Format time index based on user's time format preference
+  /// Returns formatted time string with or without AM/PM
+  /// Example (12-hour): 0 -> "12:00 AM", 13 -> "1:00 PM"
+  /// Example (24-hour): 0 -> "00:00", 13 -> "13:00"
+  static String formatTimeForDisplay(int index, TimeFormat format) {
+    if (index < 0 || index >= AppConstants.timeSlotsPerDay) {
+      throw ArgumentError('Invalid time index: $index');
+    }
+
+    final hour24 = index ~/ 2;
+    final minute = (index % 2 == 0) ? '00' : '30';
+
+    if (format == TimeFormat.twelveHour) {
+      // Convert to 12-hour format with AM/PM
+      final period = hour24 < 12 ? 'AM' : 'PM';
+      final hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+      return '$hour12:$minute $period';
+    } else {
+      // 24-hour format
+      final hourStr = hour24.toString().padLeft(2, '0');
+      return '$hourStr:$minute';
+    }
   }
 }

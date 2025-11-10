@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:happy_tracks/core/utils/color_utils.dart';
 
+/// Time format preference
+enum TimeFormat {
+  twelveHour,
+  twentyFourHour,
+}
+
 /// Application settings model
 /// Stores user preferences for theme, notifications, and customization
 class AppSettings {
@@ -9,6 +15,7 @@ class AppSettings {
   final bool notificationsEnabled;
   final int notificationStartHour; // 0-23
   final int notificationEndHour; // 0-23
+  final TimeFormat timeFormat;
 
   const AppSettings({
     required this.themeMode,
@@ -16,6 +23,7 @@ class AppSettings {
     required this.notificationsEnabled,
     required this.notificationStartHour,
     required this.notificationEndHour,
+    required this.timeFormat,
   });
 
   /// Create settings from database map
@@ -27,6 +35,7 @@ class AppSettings {
       notificationsEnabled: map['notifications_enabled'] == 'true',
       notificationStartHour: int.tryParse(map['notification_start_hour'] ?? '7') ?? 7,
       notificationEndHour: int.tryParse(map['notification_end_hour'] ?? '22') ?? 22,
+      timeFormat: _parseTimeFormat(map['time_format'] ?? '12'),
     );
   }
 
@@ -38,6 +47,7 @@ class AppSettings {
       'notifications_enabled': notificationsEnabled.toString(),
       'notification_start_hour': notificationStartHour.toString(),
       'notification_end_hour': notificationEndHour.toString(),
+      'time_format': _timeFormatToString(timeFormat),
     };
   }
 
@@ -66,6 +76,28 @@ class AppSettings {
     }
   }
 
+  /// Parse TimeFormat from string
+  static TimeFormat _parseTimeFormat(String value) {
+    switch (value) {
+      case '12':
+        return TimeFormat.twelveHour;
+      case '24':
+        return TimeFormat.twentyFourHour;
+      default:
+        return TimeFormat.twelveHour; // Default to 12-hour
+    }
+  }
+
+  /// Convert TimeFormat to string
+  static String _timeFormatToString(TimeFormat format) {
+    switch (format) {
+      case TimeFormat.twelveHour:
+        return '12';
+      case TimeFormat.twentyFourHour:
+        return '24';
+    }
+  }
+
   /// Create a copy with updated fields
   AppSettings copyWith({
     ThemeMode? themeMode,
@@ -73,6 +105,7 @@ class AppSettings {
     bool? notificationsEnabled,
     int? notificationStartHour,
     int? notificationEndHour,
+    TimeFormat? timeFormat,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -80,6 +113,7 @@ class AppSettings {
       notificationsEnabled: notificationsEnabled ?? this.notificationsEnabled,
       notificationStartHour: notificationStartHour ?? this.notificationStartHour,
       notificationEndHour: notificationEndHour ?? this.notificationEndHour,
+      timeFormat: timeFormat ?? this.timeFormat,
     );
   }
 
@@ -97,7 +131,7 @@ class AppSettings {
   @override
   String toString() {
     return 'AppSettings(theme: $themeMode, notifications: $notificationsEnabled, '
-        'hours: $notificationStartHour-$notificationEndHour)';
+        'hours: $notificationStartHour-$notificationEndHour, timeFormat: $timeFormat)';
   }
 
   @override
@@ -109,7 +143,8 @@ class AppSettings {
         other.accentColor == accentColor &&
         other.notificationsEnabled == notificationsEnabled &&
         other.notificationStartHour == notificationStartHour &&
-        other.notificationEndHour == notificationEndHour;
+        other.notificationEndHour == notificationEndHour &&
+        other.timeFormat == timeFormat;
   }
 
   @override
@@ -120,6 +155,7 @@ class AppSettings {
       notificationsEnabled,
       notificationStartHour,
       notificationEndHour,
+      timeFormat,
     );
   }
 }

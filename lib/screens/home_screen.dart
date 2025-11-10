@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_theme.dart';
@@ -5,7 +6,9 @@ import '../core/utils/time_utils.dart';
 import '../core/utils/date_utils.dart';
 import '../providers/timeslot_provider.dart';
 import '../providers/selected_date_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
+import 'settings_screen.dart';
 
 /// Home screen - Main timeslot list view
 /// Displays 48 half-hour timeslots for tracking happiness throughout the day
@@ -16,7 +19,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   // Track swipe direction for animation
   int _swipeDirection = 0; // -1 = left, 0 = none, 1 = right
 
@@ -26,13 +29,87 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   // Store scroll controllers per date to avoid conflicts during animations
   final Map<String, ScrollController> _scrollControllers = {};
 
+  // Timer to check for timeslot changes
+  Timer? _timeslotUpdateTimer;
+
+  // Track current timeslot index to detect changes
+  int _currentTimeIndex = -1;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentTimeIndex = TimeUtils.getCurrentTimeIndex();
+
+    // Listen for app lifecycle changes (background/foreground)
+    WidgetsBinding.instance.addObserver(this);
+
+    // Schedule timer for next timeslot transition
+    _scheduleNextTimeslotUpdate();
+  }
+
   @override
   void dispose() {
+    // Stop listening to lifecycle changes
+    WidgetsBinding.instance.removeObserver(this);
+
+    // Cancel timer
+    _timeslotUpdateTimer?.cancel();
+
     // Dispose all scroll controllers
     for (final controller in _scrollControllers.values) {
       controller.dispose();
     }
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // When app returns to foreground, check if timeslot has changed
+    if (state == AppLifecycleState.resumed) {
+      final newTimeIndex = TimeUtils.getCurrentTimeIndex();
+      if (newTimeIndex != _currentTimeIndex) {
+        setState(() {
+          _currentTimeIndex = newTimeIndex;
+        });
+      }
+
+      // Reschedule timer in case it was suspended
+      _scheduleNextTimeslotUpdate();
+    }
+  }
+
+  /// Schedule a timer to fire at the next timeslot boundary (00 or 30 minutes)
+  /// This ensures UI updates exactly when transitioning to a new timeslot
+  void _scheduleNextTimeslotUpdate() {
+    final now = DateTime.now();
+
+    // Calculate minutes until next timeslot boundary
+    // Timeslots start at :00 and :30
+    final currentMinute = now.minute;
+    final minutesUntilNext = currentMinute < 30
+        ? 30 - currentMinute
+        : 60 - currentMinute;
+
+    // Add a small buffer to ensure we're past the boundary
+    final duration = Duration(minutes: minutesUntilNext, seconds: 1);
+
+    // Schedule single-shot timer
+    _timeslotUpdateTimer?.cancel();
+    _timeslotUpdateTimer = Timer(duration, _onTimeslotChange);
+  }
+
+  /// Called when timeslot changes - update UI and schedule next timer
+  void _onTimeslotChange() {
+    final newTimeIndex = TimeUtils.getCurrentTimeIndex();
+
+    setState(() {
+      _currentTimeIndex = newTimeIndex;
+    });
+
+    // Schedule next update
+    _scheduleNextTimeslotUpdate();
   }
 
   /// Get or create scroll controller for a specific date
@@ -48,6 +125,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final theme = Theme.of(context);
     final selectedDate = ref.watch(selectedDateProvider);
     final timeslotsAsync = ref.watch(timeslotsProvider);
+    final settingsAsync = ref.watch(settingsProvider);
 
     // Check if viewing today
     final isToday = AppDateUtils.isToday(selectedDate);
@@ -76,17 +154,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               tooltip: 'Next day',
               onPressed: _goToNextDay,
             ),
-          // Calendar view (placeholder)
-          IconButton(
-            icon: const Icon(Icons.calendar_today),
-            tooltip: 'Calendar',
-            onPressed: () {
-              // TODO: Navigate to calendar screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Calendar view coming in Phase 3!')),
-              );
-            },
-          ),
           // Analysis view (placeholder)
           IconButton(
             icon: const Icon(Icons.bar_chart),
@@ -98,14 +165,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             },
           ),
-          // Settings (placeholder)
+          // Settings
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
             onPressed: () {
-              // TODO: Navigate to settings screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings coming in Phase 6!')),
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                ),
               );
             },
           ),
@@ -146,6 +214,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 });
               }
 
+              // Get notification hours from settings
+              final notificationStartHour = settingsAsync.when(
+                data: (settings) => settings.notificationStartHour,
+                loading: () => 7,
+                error: (_, __) => 7,
+              );
+              final notificationEndHour = settingsAsync.when(
+                data: (settings) => settings.notificationEndHour,
+                loading: () => 22,
+                error: (_, __) => 22,
+              );
+
               return RefreshIndicator(
                 onRefresh: () async {
                   // Refresh timeslots
@@ -157,17 +237,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   itemCount: timeslots.length,
                   itemBuilder: (context, index) {
                     final timeslot = timeslots[index];
-                    final currentTimeIndex = isToday ? TimeUtils.getCurrentTimeIndex() : -1;
+                    final currentTimeIndex = isToday ? _currentTimeIndex : -1;
                     final isCurrentSlot = timeslot.timeIndex == currentTimeIndex;
 
                     // Check if this timeslot is in the future
                     final isFutureSlot = isToday && timeslot.timeIndex > currentTimeIndex;
+
+                    // Check if this timeslot is outside notification hours
+                    // Convert time index to hour (0-47 -> 0-23)
+                    final slotHour = timeslot.timeIndex ~/ 2;
+                    final isOutsideNotificationHours = slotHour < notificationStartHour || slotHour >= notificationEndHour;
 
                     return TimeslotListItem(
                       key: ValueKey('${timeslot.date}_${timeslot.timeIndex}'),
                       timeslot: timeslot,
                       isCurrentSlot: isCurrentSlot,
                       isFuture: isFutureSlot,
+                      isOutsideNotificationHours: isOutsideNotificationHours,
                     );
                   },
                 ),
@@ -208,6 +294,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ), // Close KeyedSubtree
       ), // Close AnimatedSwitcher
     ), // Close GestureDetector
+      // DEBUG: Temporary FAB to test timeslot transitions
+      // TODO: Remove this before production
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          setState(() {
+            _currentTimeIndex = (_currentTimeIndex + 1) % 48;
+          });
+        },
+        icon: const Icon(Icons.skip_next),
+        label: const Text('Next Slot'),
+        tooltip: 'DEBUG: Advance to next timeslot',
+      ),
   );
   }
 

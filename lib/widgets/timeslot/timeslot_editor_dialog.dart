@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/utils/time_utils.dart';
+import '../../models/app_settings.dart';
 import '../../models/timeslot.dart';
+import '../../providers/settings_provider.dart';
 
 /// Dialog for editing timeslot description and score
 /// Allows user to add notes and adjust happiness score
-class TimeslotEditorDialog extends StatefulWidget {
+class TimeslotEditorDialog extends ConsumerStatefulWidget {
   final Timeslot timeslot;
   final Function(String? description, int score) onSave;
 
@@ -15,10 +19,10 @@ class TimeslotEditorDialog extends StatefulWidget {
   });
 
   @override
-  State<TimeslotEditorDialog> createState() => _TimeslotEditorDialogState();
+  ConsumerState<TimeslotEditorDialog> createState() => _TimeslotEditorDialogState();
 }
 
-class _TimeslotEditorDialogState extends State<TimeslotEditorDialog> {
+class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
   late TextEditingController _descriptionController;
   late int _score;
 
@@ -41,6 +45,19 @@ class _TimeslotEditorDialogState extends State<TimeslotEditorDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Get time format from settings
+    final timeFormat = ref.watch(settingsProvider).when(
+      data: (settings) => settings.timeFormat,
+      loading: () => TimeFormat.twelveHour,
+      error: (_, __) => TimeFormat.twelveHour,
+    );
+
+    // Format time according to user preference
+    final formattedTime = TimeUtils.formatTimeForDisplay(
+      widget.timeslot.timeIndex,
+      timeFormat,
+    );
+
     return Dialog(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
@@ -58,7 +75,7 @@ class _TimeslotEditorDialogState extends State<TimeslotEditorDialog> {
                 ),
                 SizedBox(width: AppTheme.spacing2),
                 Text(
-                  widget.timeslot.time,
+                  formattedTime,
                   style: theme.textTheme.headlineSmall,
                 ),
                 const Spacer(),
@@ -91,7 +108,7 @@ class _TimeslotEditorDialogState extends State<TimeslotEditorDialog> {
                     value: _score.toDouble(),
                     min: 0,
                     max: 100,
-                    divisions: 20, // 5-point increments for easier selection
+                    divisions: 100, // 1-point increments for precise selection
                     label: _score.toString(),
                     onChanged: (value) {
                       setState(() {
@@ -120,11 +137,15 @@ class _TimeslotEditorDialogState extends State<TimeslotEditorDialog> {
                   color: theme.colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                 ),
-                child: Text(
-                  _score.toString(),
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
+                child: SizedBox(
+                  width: 80, // Fixed width to prevent size changes
+                  child: Text(
+                    _score.toString(),
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),

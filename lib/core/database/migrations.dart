@@ -6,10 +6,14 @@ import '../constants/app_constants.dart';
 class DatabaseMigrations {
   /// Execute migrations based on old and new version
   static Future<void> migrate(Database db, int oldVersion, int newVersion) async {
-    // Migration logic for future schema changes
-    // For now, only version 1 exists
+    // Run migrations sequentially
     if (oldVersion < 1) {
       await _createV1Schema(db);
+    }
+
+    // Migrate from V1 to V2 (add time_format setting)
+    if (oldVersion < 2) {
+      await _migrateToV2(db);
     }
   }
 
@@ -75,5 +79,28 @@ class DatabaseMigrations {
       'key': 'notification_end_hour',
       'value': AppConstants.defaultNotificationEndHour.toString(),
     });
+
+    await db.insert('settings', {
+      'key': 'time_format',
+      'value': AppConstants.defaultTimeFormat,
+    });
+  }
+
+  /// Migrate from V1 to V2
+  /// Adds time_format setting for users upgrading from V1
+  static Future<void> _migrateToV2(Database db) async {
+    // Add time_format setting if it doesn't exist
+    final result = await db.query(
+      'settings',
+      where: 'key = ?',
+      whereArgs: ['time_format'],
+    );
+
+    if (result.isEmpty) {
+      await db.insert('settings', {
+        'key': 'time_format',
+        'value': AppConstants.defaultTimeFormat,
+      });
+    }
   }
 }

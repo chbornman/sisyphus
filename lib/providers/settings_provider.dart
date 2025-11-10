@@ -70,6 +70,18 @@ class Settings extends _$Settings {
     ref.invalidateSelf();
   }
 
+  /// Update time format preference
+  Future<void> updateTimeFormat(TimeFormat format) async {
+    final dbService = ref.read(databaseServiceProvider);
+    await dbService.updateSetting(
+      'time_format',
+      format == TimeFormat.twelveHour ? '12' : '24',
+    );
+
+    // Refresh state
+    ref.invalidateSelf();
+  }
+
   /// Helper to convert ThemeMode to string
   String _themeModeToString(ThemeMode mode) {
     switch (mode) {
