@@ -51,7 +51,9 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    // Start in the middle of a large virtual page count for infinite scroll effect
+    _pageController = PageController(initialPage: 5000);
+    _currentCarouselPage = 5000;
     _heatmapScrollController = ScrollController();
     _startCarouselAutoAdvance();
   }
@@ -71,25 +73,17 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       const Duration(seconds: 5),
       (timer) {
         if (_pageController.hasClients) {
-          // Calculate next page
-          final nextPage = (_currentCarouselPage + 1) % 5; // Max 5 moments
+          // Simply advance to next page - infinite scroll handles wrap-around smoothly
+          final nextPage = _currentCarouselPage + 1;
 
-          // If looping back to start, jump instead of animating to prevent long scroll
-          if (nextPage == 0 && _currentCarouselPage == 4) {
-            _pageController.jumpToPage(nextPage);
-            setState(() {
-              _currentCarouselPage = nextPage;
-            });
-          } else {
-            _pageController.animateToPage(
-              nextPage,
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOut,
-            );
-            setState(() {
-              _currentCarouselPage = nextPage;
-            });
-          }
+          _pageController.animateToPage(
+            nextPage,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+          setState(() {
+            _currentCarouselPage = nextPage;
+          });
         }
       },
     );
@@ -339,14 +333,17 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           height: 180,
           child: PageView.builder(
             controller: _pageController,
-            itemCount: moments.length,
+            // Use large virtual page count for infinite scroll effect
+            itemCount: 10000,
             onPageChanged: (index) {
               setState(() {
                 _currentCarouselPage = index;
               });
             },
             itemBuilder: (context, index) {
-              final moment = moments[index];
+              // Map virtual page index to actual moment using modulo
+              final momentIndex = index % moments.length;
+              final moment = moments[momentIndex];
               return _buildMomentCard(moment, theme, accentColor, timeFormat);
             },
           ),
