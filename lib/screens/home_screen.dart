@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../core/constants/app_theme.dart';
 import '../core/utils/time_utils.dart';
 import '../core/utils/date_utils.dart';
@@ -139,6 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           IconButton(
             icon: const Icon(Icons.chevron_left),
             tooltip: 'Previous day',
+            visualDensity: VisualDensity.compact,
             onPressed: _goToPreviousDay,
           ),
           // Jump to today
@@ -146,6 +148,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             IconButton(
               icon: const Icon(Icons.today),
               tooltip: 'Today',
+              visualDensity: VisualDensity.compact,
               onPressed: _goToToday,
             ),
           // Navigate to next day (hidden if already at today)
@@ -153,12 +156,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             IconButton(
               icon: const Icon(Icons.chevron_right),
               tooltip: 'Next day',
+              visualDensity: VisualDensity.compact,
               onPressed: _goToNextDay,
             ),
           // Analysis view
           IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Analysis',
+            visualDensity: VisualDensity.compact,
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -171,6 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           IconButton(
             icon: const Icon(Icons.settings),
             tooltip: 'Settings',
+            visualDensity: VisualDensity.compact,
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -341,13 +347,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final date = AppDateUtils.fromDbFormat(selectedDate);
     final isToday = AppDateUtils.isToday(selectedDate);
     final isYesterday = selectedDate == AppDateUtils.yesterday();
+    final now = DateTime.now();
+    final isDifferentYear = date.year != now.year;
 
     String title;
+    String? subtitle;
+
     if (isToday) {
       title = 'Today';
+      subtitle = AppDateUtils.toDisplayFormat(date);
     } else if (isYesterday) {
       title = 'Yesterday';
+      subtitle = AppDateUtils.toDisplayFormat(date);
+    } else if (isDifferentYear) {
+      // For dates in different years, show date without year as title
+      // and year as subtitle
+      title = DateFormat('MMMM d').format(date);
+      subtitle = date.year.toString();
     } else {
+      // For other dates in current year, just show the date
       title = AppDateUtils.toDisplayFormat(date);
     }
 
@@ -355,9 +373,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(title),
-        if (!isToday)
+        if (subtitle != null)
           Text(
-            AppDateUtils.toDisplayFormat(date),
+            subtitle,
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
             ),

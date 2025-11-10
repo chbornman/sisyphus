@@ -8,9 +8,15 @@ class AppDateUtils {
     return DateFormat(AppConstants.dateFormat).format(date);
   }
 
-  /// Format date for display (e.g., "November 9, 2025")
+  /// Format date for display (e.g., "November 9" or "November 9, 2024" if not current year)
+  /// Only shows year when it differs from current year
   static String toDisplayFormat(DateTime date) {
-    return DateFormat(AppConstants.displayDateFormat).format(date);
+    final now = DateTime.now();
+    final isCurrentYear = date.year == now.year;
+
+    // Show year only if not current year
+    final format = isCurrentYear ? 'MMMM d' : 'MMMM d, y';
+    return DateFormat(format).format(date);
   }
 
   /// Format date to short format (e.g., "Nov 9")
