@@ -8,6 +8,7 @@ import '../core/utils/date_utils.dart';
 import '../providers/timeslot_provider.dart';
 import '../providers/selected_date_provider.dart';
 import '../providers/settings_provider.dart';
+import '../providers/scroll_target_provider.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
@@ -128,6 +129,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final selectedDate = ref.watch(selectedDateProvider);
     final timeslotsAsync = ref.watch(timeslotsProvider);
     final settingsAsync = ref.watch(settingsProvider);
+    final scrollTarget = ref.watch(scrollTargetProvider);
 
     // Check if viewing today
     final isToday = AppDateUtils.isToday(selectedDate);
@@ -214,8 +216,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               // Get scroll controller for this specific date
               final scrollController = _getScrollController(selectedDate);
 
+              // Scroll to target timeslot if navigating from analysis screen
+              if (scrollTarget != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _scrollToTimeslot(scrollController, scrollTarget);
+                  // Clear the scroll target after using it
+                  ref.read(scrollTargetProvider.notifier).clearTarget();
+                });
+              }
               // Auto-scroll to current time on very first app load (only if viewing today)
-              if (isToday && !_hasPerformedInitialScroll) {
+              else if (isToday && !_hasPerformedInitialScroll) {
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   _scrollToCurrentTime(scrollController);
                   _hasPerformedInitialScroll = true;
@@ -389,11 +399,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (!controller.hasClients) return;
 
     final currentIndex = TimeUtils.getCurrentTimeIndex();
+    _scrollToTimeslot(controller, currentIndex);
+  }
+
+  /// Scroll to a specific timeslot index
+  void _scrollToTimeslot(ScrollController controller, int timeslotIndex) {
+    if (!controller.hasClients) return;
 
     // Calculate scroll position
     // Each item is timeslotHeight + vertical margin (2 * spacing1)
     final itemHeight = AppTheme.timeslotHeight + (2 * AppTheme.spacing1);
-    final targetPosition = currentIndex * itemHeight;
+    final targetPosition = timeslotIndex * itemHeight;
 
     // Scroll to position with some offset to center it better
     final maxScroll = controller.position.maxScrollExtent;

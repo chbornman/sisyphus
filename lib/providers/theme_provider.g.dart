@@ -6,7 +6,7 @@ part of 'theme_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$lightThemeHash() => r'4fecee93d80e4b1a4cedc8c02fcc16683f9b74fb';
+String _$lightThemeHash() => r'01cb38f788d5c74d93fc35503c9d329eb9836fdf';
 
 /// Provider for light theme
 /// Watches settings to get accent color
@@ -26,7 +26,7 @@ final lightThemeProvider = AutoDisposeProvider<ThemeData>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef LightThemeRef = AutoDisposeProviderRef<ThemeData>;
-String _$darkThemeHash() => r'b31294a844c284b9de625243cfe87a2f257087fc';
+String _$darkThemeHash() => r'e296620e9ecbc9a5053ff5c06ce6dd87466c8b1f';
 
 /// Provider for dark theme
 /// Watches settings to get accent color
@@ -46,7 +46,7 @@ final darkThemeProvider = AutoDisposeProvider<ThemeData>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef DarkThemeRef = AutoDisposeProviderRef<ThemeData>;
-String _$themeModeHash() => r'073d781d79c275360ed0992f63dc46f3d537b4c2';
+String _$themeModeHash() => r'57bdc10cff3e25fae3e96e81ea3134ce49b49170';
 
 /// Provider for theme mode
 /// Watches settings to get user's theme preference

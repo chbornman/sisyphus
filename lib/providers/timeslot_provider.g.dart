@@ -6,7 +6,7 @@ part of 'timeslot_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$timeslotsHash() => r'f80c36c18d5c91be1ba7ec67e5b5a5b6d35d82e8';
+String _$timeslotsHash() => r'fdae4b12fc6077f41ab7186c647749d7fa7ed6d5';
 
 /// Provider for timeslots for a specific date
 /// Automatically watches the selected date and updates when it changes

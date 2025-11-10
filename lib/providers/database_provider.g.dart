@@ -6,7 +6,7 @@ part of 'database_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$databaseServiceHash() => r'953b1020c1ad50a75b4605d375910af4a4c2e3cd';
+String _$databaseServiceHash() => r'766f41a8fb8947216fae68bbc31fa62d037f6899';
 
 /// Provider for DatabaseService singleton
 /// This is the main service used throughout the app for data persistence

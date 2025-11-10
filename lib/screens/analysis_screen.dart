@@ -10,6 +10,7 @@ import '../models/timeslot.dart';
 import '../providers/settings_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/selected_date_provider.dart';
+import '../providers/scroll_target_provider.dart';
 
 /// Time filter options for memorable moments
 enum TimeFilter {
@@ -439,65 +440,41 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
     }
   }
 
+  /// Determine which month label to show based on leftmost visible date
+  /// Shows the month of the leftmost visible date in the viewport
   void _onScroll() {
     if (_allDates.isEmpty || !widget.scrollController.hasClients) return;
 
-    // Calculate which date is at the left edge based on scroll position
     const columnWidth = 20.0 + 8.0; // width (20) + right padding (8)
     final scrollOffset = widget.scrollController.offset;
-    final columnIndex = (scrollOffset / columnWidth).floor();
 
-    if (columnIndex >= 0 && columnIndex < _allDates.length) {
-      final leftDate = AppDateUtils.fromDbFormat(_allDates[columnIndex]);
+    // Calculate first visible column index
+    final firstVisibleIndex = (scrollOffset / columnWidth).floor();
 
-      // Check if we're on the last day of a month
-      final isLastDayOfMonth = columnIndex + 1 < _allDates.length &&
-          AppDateUtils.fromDbFormat(_allDates[columnIndex + 1]).day == 1;
+    if (firstVisibleIndex < 0 || firstVisibleIndex >= _allDates.length) return;
 
-      if (isLastDayOfMonth) {
-        // Show both current month and next month (e.g., "Sep Oct")
-        final currentMonth = _getMonthAbbreviation(leftDate.month);
-        final nextDate = AppDateUtils.fromDbFormat(_allDates[columnIndex + 1]);
-        final nextMonth = _getMonthAbbreviation(nextDate.month);
-        widget.onVisibleMonthChanged('$currentMonth $nextMonth');
-        return;
-      }
-
-      // Check if the 1st of a month is visible in the first 3 columns (hide sticky if so)
-      bool firstOfMonthNearLeft = false;
-      for (int i = columnIndex; i < columnIndex + 3 && i < _allDates.length; i++) {
-        final date = AppDateUtils.fromDbFormat(_allDates[i]);
-        if (date.day == 1) {
-          firstOfMonthNearLeft = true;
-          break;
-        }
-      }
-
-      // If the inline month label is visible, hide the sticky label
-      if (firstOfMonthNearLeft) {
-        widget.onVisibleMonthChanged('');
-        return;
-      }
-
-      // Find the most recent "1st of month" that has passed the left edge
-      String? monthToShow;
-      for (int i = columnIndex; i >= 0; i--) {
-        final date = AppDateUtils.fromDbFormat(_allDates[i]);
-        if (date.day == 1) {
-          monthToShow = _getMonthAbbreviation(date.month);
-          break;
-        }
-      }
-
-      // If no 1st of month found (we're before the first one), use the first date's month
-      if (monthToShow == null && columnIndex < _allDates.length) {
-        monthToShow = _getMonthAbbreviation(leftDate.month);
-      }
-
-      if (monthToShow != null) {
-        widget.onVisibleMonthChanged(monthToShow);
+    // Check if the 1st of any month is visible in first half of viewport
+    // If so, hide the sticky label (the inline label is sufficient)
+    bool firstOfMonthVisible = false;
+    for (int i = firstVisibleIndex;
+         i < firstVisibleIndex + 7 && i < _allDates.length;
+         i++) {
+      final date = AppDateUtils.fromDbFormat(_allDates[i]);
+      if (date.day == 1) {
+        firstOfMonthVisible = true;
+        break;
       }
     }
+
+    if (firstOfMonthVisible) {
+      widget.onVisibleMonthChanged('');
+      return;
+    }
+
+    // Show the month of the leftmost visible date
+    final leftmostDate = AppDateUtils.fromDbFormat(_allDates[firstVisibleIndex]);
+    final monthLabel = _getMonthAbbreviation(leftmostDate.month);
+    widget.onVisibleMonthChanged(monthLabel);
   }
 
   String _getMonthAbbreviation(int month) {
@@ -664,9 +641,22 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
     final isFirstOfMonth = dateObj.day == 1;
 
     return GestureDetector(
-      onTap: () {
-        // Update selected date
+      // Make entire column area tappable, not just the dots
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (details) {
+        // Calculate which timeslot was tapped based on y-position
+        // Skip the month label (12px) and date header (~20px) = ~32px offset
+        const headerOffset = 32.0;
+        final tapY = details.localPosition.dy - headerOffset;
+
+        // Each dot is 5px tall with 0.5px margin = 5.5px per timeslot
+        const dotHeight = 5.5;
+        final timeslotIndex = (tapY / dotHeight).floor().clamp(0, 47);
+
+        // Update selected date and scroll target
         ref.read(selectedDateProvider.notifier).selectDate(dateObj);
+        ref.read(scrollTargetProvider.notifier).setTarget(timeslotIndex);
+
         // Navigate back to home screen
         Navigator.of(context).pop();
       },
