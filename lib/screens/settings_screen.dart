@@ -387,17 +387,16 @@ class _TimeRangePicker extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Start time picker
+                // Start time picker (can't be >= end time)
                 _HourPicker(
                   hour: startHour,
                   timeFormat: timeFormat,
+                  maxIndex: endHour, // Don't show times >= end time
                   onChanged: (newStartHour) {
-                    if (newStartHour < endHour) {
-                      ref.read(settingsProvider.notifier).updateNotificationHours(
-                        newStartHour,
-                        endHour,
-                      );
-                    }
+                    ref.read(settingsProvider.notifier).updateNotificationHours(
+                      newStartHour,
+                      endHour,
+                    );
                   },
                 ),
                 Padding(
@@ -409,17 +408,16 @@ class _TimeRangePicker extends ConsumerWidget {
                     ),
                   ),
                 ),
-                // End time picker
+                // End time picker (can't be <= start time)
                 _HourPicker(
                   hour: endHour,
                   timeFormat: timeFormat,
+                  minIndex: startHour + 1, // Don't show times <= start time
                   onChanged: (newEndHour) {
-                    if (newEndHour > startHour) {
-                      ref.read(settingsProvider.notifier).updateNotificationHours(
-                        startHour,
-                        newEndHour,
-                      );
-                    }
+                    ref.read(settingsProvider.notifier).updateNotificationHours(
+                      startHour,
+                      newEndHour,
+                    );
                   },
                 ),
               ],
@@ -446,11 +444,15 @@ class _HourPicker extends StatefulWidget {
   final int hour; // Actually time index 0-47
   final TimeFormat timeFormat;
   final ValueChanged<int> onChanged;
+  final int? minIndex; // Minimum selectable index (inclusive)
+  final int? maxIndex; // Maximum selectable index (exclusive)
 
   const _HourPicker({
     required this.hour,
     required this.timeFormat,
     required this.onChanged,
+    this.minIndex,
+    this.maxIndex,
   });
 
   @override
@@ -466,6 +468,17 @@ class _HourPickerState extends State<_HourPicker> {
     final theme = Theme.of(context);
     // Buffer the selected index while user scrolls the wheel
     int tempSelectedIndex = widget.hour;
+
+    // Build list of valid time indices based on min/max constraints
+    final minIdx = widget.minIndex ?? 0;
+    final maxIdx = widget.maxIndex ?? 48;
+    final validIndices = List.generate(
+      maxIdx - minIdx,
+      (i) => minIdx + i,
+    );
+
+    // Find initial scroll position
+    final initialScrollIndex = validIndices.indexOf(widget.hour);
 
     showModalBottomSheet(
       context: context,
@@ -527,20 +540,25 @@ class _HourPickerState extends State<_HourPicker> {
                       perspective: 0.005,
                       diameterRatio: 1.2,
                       physics: const FixedExtentScrollPhysics(),
-                      controller: FixedExtentScrollController(initialItem: widget.hour),
-                      onSelectedItemChanged: (index) {
+                      controller: FixedExtentScrollController(
+                        initialItem: initialScrollIndex.clamp(0, validIndices.length - 1),
+                      ),
+                      onSelectedItemChanged: (wheelIndex) {
+                        // Map wheel index to actual time index
+                        final timeIndex = validIndices[wheelIndex];
                         // Store selection temporarily and update UI to show new selection
                         setModalState(() {
-                          tempSelectedIndex = index;
+                          tempSelectedIndex = timeIndex;
                         });
                       },
                       childDelegate: ListWheelChildBuilderDelegate(
-                        builder: (context, index) {
-                          if (index < 0 || index >= 48) return null;
-                          final isSelected = index == tempSelectedIndex;
+                        builder: (context, wheelIndex) {
+                          if (wheelIndex < 0 || wheelIndex >= validIndices.length) return null;
+                          final timeIndex = validIndices[wheelIndex];
+                          final isSelected = timeIndex == tempSelectedIndex;
                           return Center(
                             child: Text(
-                              _formatTimeIndex(index),
+                              _formatTimeIndex(timeIndex),
                               style: theme.textTheme.headlineSmall?.copyWith(
                                 color: isSelected
                                     ? theme.colorScheme.primary
@@ -550,7 +568,7 @@ class _HourPickerState extends State<_HourPicker> {
                             ),
                           );
                         },
-                        childCount: 48,
+                        childCount: validIndices.length,
                       ),
                     ),
                   ],
