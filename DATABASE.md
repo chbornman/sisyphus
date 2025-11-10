@@ -1,6 +1,6 @@
 # Database Schema
 
-HappyTracks uses SQLite for local data storage. All data is stored on-device and persisted forever.
+Sisyphus uses SQLite for local data storage. All data is stored on-device and persisted forever.
 
 ## Tables
 
@@ -23,12 +23,14 @@ CREATE TABLE timeslots (
 ```
 
 **Indexes:**
+
 ```sql
 CREATE INDEX idx_timeslots_date ON timeslots(date);
 CREATE INDEX idx_timeslots_happiness ON timeslots(happiness_score DESC);
 ```
 
 **Notes:**
+
 - `time_index` maps to timeslots: 0 = 00:00, 1 = 00:30, 2 = 01:00, ..., 47 = 23:30
 - `UNIQUE(date, time_index)` constraint prevents duplicate entries for same timeslot
 - Happiness scores are constrained to 0-100 in application logic
@@ -47,15 +49,16 @@ CREATE TABLE settings (
 
 **Pre-populated Settings:**
 
-| Key | Value Type | Example | Description |
-|-----|------------|---------|-------------|
-| `theme_mode` | String | `"light"`, `"dark"`, `"system"` | Current theme preference |
-| `accent_color` | Hex String | `"#FF6B6B"` | User-selected accent color |
-| `notifications_enabled` | Boolean String | `"true"`, `"false"` | Master notification toggle |
-| `notification_start_hour` | Integer String | `"7"` (7am) | Start hour for notifications (0-23) |
-| `notification_end_hour` | Integer String | `"22"` (10pm) | End hour for notifications (0-23) |
+| Key                       | Value Type     | Example                         | Description                         |
+| ------------------------- | -------------- | ------------------------------- | ----------------------------------- |
+| `theme_mode`              | String         | `"light"`, `"dark"`, `"system"` | Current theme preference            |
+| `accent_color`            | Hex String     | `"#FF6B6B"`                     | User-selected accent color          |
+| `notifications_enabled`   | Boolean String | `"true"`, `"false"`             | Master notification toggle          |
+| `notification_start_hour` | Integer String | `"7"` (7am)                     | Start hour for notifications (0-23) |
+| `notification_end_hour`   | Integer String | `"22"` (10pm)                   | End hour for notifications (0-23)   |
 
 **Notes:**
+
 - Settings are stored as key-value pairs for flexibility
 - All values stored as TEXT, parsed by application
 - Settings persist across app restarts
@@ -98,6 +101,7 @@ class AppSettings {
 ### Common Queries
 
 **Get all timeslots for a specific date:**
+
 ```sql
 SELECT * FROM timeslots
 WHERE date = ?
@@ -105,6 +109,7 @@ ORDER BY time_index ASC;
 ```
 
 **Get top 10 happiest moments (all time):**
+
 ```sql
 SELECT * FROM timeslots
 WHERE happiness_score > 0
@@ -113,6 +118,7 @@ LIMIT 10;
 ```
 
 **Get bottom 10 lowest moments (all time):**
+
 ```sql
 SELECT * FROM timeslots
 WHERE happiness_score > 0
@@ -121,12 +127,14 @@ LIMIT 10;
 ```
 
 **Get all dates with any tracked data:**
+
 ```sql
 SELECT DISTINCT date FROM timeslots
 ORDER BY date DESC;
 ```
 
 **Get average happiness for a specific date:**
+
 ```sql
 SELECT AVG(happiness_score) as avg_score
 FROM timeslots
@@ -134,6 +142,7 @@ WHERE date = ? AND happiness_score > 0;
 ```
 
 **Upsert timeslot entry:**
+
 ```sql
 INSERT INTO timeslots (date, time_index, time, happiness_score, description, created_at, updated_at)
 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -147,15 +156,18 @@ DO UPDATE SET
 ## Migration Strategy
 
 ### Version 1 (Initial)
+
 - Create `timeslots` table
 - Create `settings` table
 - Create indexes
 - Insert default settings
 
 ### Future Migrations
+
 Future schema changes will be versioned and applied incrementally using SQLite's `PRAGMA user_version`.
 
 Example future additions might include:
+
 - `tags` table for categorizing activities
 - `goals` table for tracking happiness targets
 - `notes` table for daily reflections

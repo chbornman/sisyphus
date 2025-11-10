@@ -17,6 +17,7 @@ class AppSettings {
   final int notificationStartHour; // 0-47 (time index, 30-min slots)
   final int notificationEndHour; // 0-47 (time index, 30-min slots)
   final TimeFormat timeFormat;
+  final bool hasSeenWelcome;
 
   const AppSettings({
     required this.themeMode,
@@ -25,6 +26,7 @@ class AppSettings {
     required this.notificationStartHour,
     required this.notificationEndHour,
     required this.timeFormat,
+    required this.hasSeenWelcome,
   });
 
   /// Create settings from database map
@@ -37,6 +39,7 @@ class AppSettings {
       notificationStartHour: int.tryParse(map['notification_start_hour'] ?? AppConstants.defaultNotificationStartHour.toString()) ?? AppConstants.defaultNotificationStartHour, // 7:00 AM
       notificationEndHour: int.tryParse(map['notification_end_hour'] ?? AppConstants.defaultNotificationEndHour.toString()) ?? AppConstants.defaultNotificationEndHour, // 10:00 PM
       timeFormat: _parseTimeFormat(map['time_format'] ?? '12'),
+      hasSeenWelcome: map['has_seen_welcome'] == 'true',
     );
   }
 
@@ -49,6 +52,7 @@ class AppSettings {
       'notification_start_hour': notificationStartHour.toString(),
       'notification_end_hour': notificationEndHour.toString(),
       'time_format': _timeFormatToString(timeFormat),
+      'has_seen_welcome': hasSeenWelcome.toString(),
     };
   }
 
@@ -107,6 +111,7 @@ class AppSettings {
     int? notificationStartHour,
     int? notificationEndHour,
     TimeFormat? timeFormat,
+    bool? hasSeenWelcome,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
@@ -115,6 +120,7 @@ class AppSettings {
       notificationStartHour: notificationStartHour ?? this.notificationStartHour,
       notificationEndHour: notificationEndHour ?? this.notificationEndHour,
       timeFormat: timeFormat ?? this.timeFormat,
+      hasSeenWelcome: hasSeenWelcome ?? this.hasSeenWelcome,
     );
   }
 
@@ -145,7 +151,8 @@ class AppSettings {
         other.notificationsEnabled == notificationsEnabled &&
         other.notificationStartHour == notificationStartHour &&
         other.notificationEndHour == notificationEndHour &&
-        other.timeFormat == timeFormat;
+        other.timeFormat == timeFormat &&
+        other.hasSeenWelcome == hasSeenWelcome;
   }
 
   @override
@@ -157,6 +164,7 @@ class AppSettings {
       notificationStartHour,
       notificationEndHour,
       timeFormat,
+      hasSeenWelcome,
     );
   }
 }

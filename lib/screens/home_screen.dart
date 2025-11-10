@@ -13,6 +13,7 @@ import '../providers/scroll_target_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/database_provider.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
+import '../widgets/welcome_modal.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
 
@@ -54,6 +55,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     // Initialize notifications (reschedule if enabled)
     _initializeNotifications();
+
+    // Show welcome modal if first launch
+    _checkAndShowWelcomeModal();
   }
 
   /// Initialize and reschedule notifications on app startup
@@ -87,6 +91,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       // Silently fail - notifications are not critical to app functionality
       debugPrint('Failed to initialize notifications: $e');
     }
+  }
+
+  /// Check and show welcome modal on first app launch
+  void _checkAndShowWelcomeModal() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final settingsAsync = ref.read(settingsProvider);
+      settingsAsync.whenData((settings) {
+        if (!settings.hasSeenWelcome) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const WelcomeModal(),
+          );
+        }
+      });
+    });
   }
 
   @override

@@ -15,6 +15,11 @@ class DatabaseMigrations {
     if (oldVersion < 2) {
       await _migrateToV2(db);
     }
+
+    // Migrate from V2 to V3 (add has_seen_welcome setting)
+    if (oldVersion < 3) {
+      await _migrateToV3(db);
+    }
   }
 
   /// Create version 1 schema
@@ -84,6 +89,11 @@ class DatabaseMigrations {
       'key': 'time_format',
       'value': AppConstants.defaultTimeFormat,
     });
+
+    await db.insert('settings', {
+      'key': 'has_seen_welcome',
+      'value': 'false',
+    });
   }
 
   /// Migrate from V1 to V2
@@ -100,6 +110,25 @@ class DatabaseMigrations {
       await db.insert('settings', {
         'key': 'time_format',
         'value': AppConstants.defaultTimeFormat,
+      });
+    }
+  }
+
+  /// Migrate from V2 to V3
+  /// Adds has_seen_welcome setting for welcome modal
+  static Future<void> _migrateToV3(Database db) async {
+    // Add has_seen_welcome setting if it doesn't exist
+    final result = await db.query(
+      'settings',
+      where: 'key = ?',
+      whereArgs: ['has_seen_welcome'],
+    );
+
+    if (result.isEmpty) {
+      // For existing users, mark as seen to avoid showing welcome modal
+      await db.insert('settings', {
+        'key': 'has_seen_welcome',
+        'value': 'true',
       });
     }
   }

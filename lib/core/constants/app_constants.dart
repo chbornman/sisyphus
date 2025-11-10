@@ -2,7 +2,7 @@
 class AppConstants {
   // Database
   static const String databaseName = 'happy_tracks.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   // Timeslots
   static const int timeSlotsPerDay = 48; // 24 hours * 2 (half-hour intervals)

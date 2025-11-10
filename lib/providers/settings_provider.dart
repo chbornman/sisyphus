@@ -134,6 +134,16 @@ class Settings extends _$Settings {
     ref.invalidateSelf();
   }
 
+  /// Mark welcome modal as seen
+  /// Called after user dismisses the onboarding welcome modal
+  Future<void> markWelcomeSeen() async {
+    final dbService = ref.read(databaseServiceProvider);
+    await dbService.updateSetting('has_seen_welcome', 'true');
+
+    // Refresh state
+    ref.invalidateSelf();
+  }
+
   /// Helper to convert ThemeMode to string
   String _themeModeToString(ThemeMode mode) {
     switch (mode) {
