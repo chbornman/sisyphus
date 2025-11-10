@@ -294,18 +294,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         ), // Close KeyedSubtree
       ), // Close AnimatedSwitcher
     ), // Close GestureDetector
-      // DEBUG: Temporary FAB to test timeslot transitions
-      // TODO: Remove this before production
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          setState(() {
-            _currentTimeIndex = (_currentTimeIndex + 1) % 48;
-          });
-        },
-        icon: const Icon(Icons.skip_next),
-        label: const Text('Next Slot'),
-        tooltip: 'DEBUG: Advance to next timeslot',
-      ),
   );
   }
 
