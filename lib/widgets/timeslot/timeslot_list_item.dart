@@ -142,11 +142,6 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
       ),
       child: Row(
         children: [
-          // Time label
-          _buildTimeLabel(theme, timeFormat),
-
-          SizedBox(width: AppTheme.spacing2),
-
           // Happiness score bar (draggable)
           Expanded(
             child: GestureDetector(
@@ -172,7 +167,7 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
                     // Score badge
                     if (displayScore > 0)
                       Positioned(
-                        right: AppTheme.spacing2,
+                        left: AppTheme.spacing2,
                         top: 0,
                         bottom: 0,
                         child: Center(
@@ -184,10 +179,10 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
                     if (widget.timeslot.description != null &&
                         widget.timeslot.description!.isNotEmpty)
                       Positioned(
-                        left: AppTheme.spacing2,
+                        left: displayScore > 0 ? 60 : AppTheme.spacing2,
                         top: 0,
                         bottom: 0,
-                        right: displayScore > 0 ? 60 : AppTheme.spacing2,
+                        right: AppTheme.spacing2,
                         child: Center(
                           child: _buildDescriptionPreview(theme),
                         ),
@@ -211,6 +206,11 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
               ),
             ),
           ),
+
+          SizedBox(width: AppTheme.spacing2),
+
+          // Time label
+          _buildTimeLabel(theme, timeFormat),
         ],
       ),
     );
@@ -342,8 +342,9 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
     // Calculate delta from start position
     final deltaX = details.localPosition.dx - _dragStartX!;
 
-    // Convert delta to score change (full width = 100 points)
-    final deltaScore = (deltaX / width * 100).round();
+    // Convert delta to score change (2x sensitivity: half width = 100 points)
+    // This makes the gesture more responsive, requiring less drag distance
+    final deltaScore = (deltaX / width * 200).round();
 
     // Apply delta to starting score
     final newScore = (_dragStartScore! + deltaScore).clamp(0, 100);

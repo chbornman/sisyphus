@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../core/constants/app_constants.dart';
 import '../core/constants/app_theme.dart';
 import '../core/utils/time_utils.dart';
 import '../core/utils/date_utils.dart';
@@ -269,13 +270,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               );
               final notificationStartIndex = settingsAsync.when(
                 data: (settings) => settings.notificationStartHour, // Actually time index now
-                loading: () => 14, // 7:00 AM
-                error: (_, __) => 14,
+                loading: () => AppConstants.defaultNotificationStartHour, // 7:00 AM
+                error: (_, __) => AppConstants.defaultNotificationStartHour,
               );
               final notificationEndIndex = settingsAsync.when(
                 data: (settings) => settings.notificationEndHour, // Actually time index now
-                loading: () => 44, // 10:00 PM
-                error: (_, __) => 44,
+                loading: () => AppConstants.defaultNotificationEndHour, // 10:00 PM
+                error: (_, __) => AppConstants.defaultNotificationEndHour,
               );
 
               return RefreshIndicator(

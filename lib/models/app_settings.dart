@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:happy_tracks/core/constants/app_constants.dart';
 import 'package:happy_tracks/core/utils/color_utils.dart';
 
 /// Time format preference
@@ -33,8 +34,8 @@ class AppSettings {
       themeMode: _parseThemeMode(map['theme_mode'] ?? 'system'),
       accentColor: ColorUtils.fromHex(map['accent_color'] ?? '#6366F1'),
       notificationsEnabled: map['notifications_enabled'] == 'true',
-      notificationStartHour: int.tryParse(map['notification_start_hour'] ?? '14') ?? 14, // 7:00 AM
-      notificationEndHour: int.tryParse(map['notification_end_hour'] ?? '44') ?? 44, // 10:00 PM
+      notificationStartHour: int.tryParse(map['notification_start_hour'] ?? AppConstants.defaultNotificationStartHour.toString()) ?? AppConstants.defaultNotificationStartHour, // 7:00 AM
+      notificationEndHour: int.tryParse(map['notification_end_hour'] ?? AppConstants.defaultNotificationEndHour.toString()) ?? AppConstants.defaultNotificationEndHour, // 10:00 PM
       timeFormat: _parseTimeFormat(map['time_format'] ?? '12'),
     );
   }
