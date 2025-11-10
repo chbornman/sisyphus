@@ -1,0 +1,191 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+
+  # ========================================
+  # BETA DEPLOYMENT (TestFlight)
+  # ========================================
+
+  desc "Build and upload to TestFlight"
+  desc "Usage: fastlane beta"
+  lane :beta do
+    # Ensure we're in the Flutter project root
+    Dir.chdir("..") do
+      # Clean previous builds
+      sh("flutter", "clean")
+
+      # Get Flutter dependencies
+      sh("flutter", "pub", "get")
+    end
+
+    # Run pod install to fix CocoaPods after flutter clean
+    sh("pod", "install")
+
+    Dir.chdir("..") do
+      # Build iOS release
+      sh("flutter", "build", "ios", "--release", "--no-codesign")
+    end
+
+    # Build and sign the app with automatic signing
+    build_app(
+      scheme: "Runner",
+      export_method: "app-store",
+      export_options: {
+        signingStyle: "automatic",
+        teamID: "HZJ8DQWQYZ"
+      }
+    )
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true,
+      skip_submission: true,
+      distribute_external: false,
+      notify_external_testers: false
+    )
+
+    # Notify success
+    notification(
+      title: "Sisyphus",
+      message: "Successfully uploaded to TestFlight! 🚀"
+    )
+  end
+
+  # ========================================
+  # APP STORE RELEASE
+  # ========================================
+
+  desc "Build and upload to App Store"
+  desc "Usage: fastlane release"
+  lane :release do
+    # Ensure we're in the Flutter project root
+    Dir.chdir("..") do
+      # Clean previous builds
+      sh("flutter", "clean")
+
+      # Get Flutter dependencies
+      sh("flutter", "pub", "get")
+    end
+
+    # Run pod install to fix CocoaPods after flutter clean
+    sh("pod", "install")
+
+    Dir.chdir("..") do
+      # Build iOS release
+      sh("flutter", "build", "ios", "--release", "--no-codesign")
+    end
+
+    # Build and sign the app with automatic signing
+    build_app(
+      scheme: "Runner",
+      export_method: "app-store",
+      export_options: {
+        signingStyle: "automatic",
+        teamID: "HZJ8DQWQYZ"
+      }
+    )
+
+    # Upload to App Store Connect
+    upload_to_app_store(
+      force: true,
+      skip_metadata: false,
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false
+    )
+
+    # Notify success
+    notification(
+      title: "Sisyphus",
+      message: "Successfully uploaded to App Store Connect! 🎉"
+    )
+  end
+
+  # ========================================
+  # QUICK BUILD (no upload)
+  # ========================================
+
+  desc "Build iOS app locally without uploading"
+  desc "Usage: fastlane build"
+  lane :build do
+    Dir.chdir("..") do
+      sh("flutter", "clean")
+      sh("flutter", "pub", "get")
+    end
+
+    # Run pod install to fix CocoaPods after flutter clean
+    sh("pod", "install")
+
+    Dir.chdir("..") do
+      sh("flutter", "build", "ios", "--release")
+    end
+
+    notification(
+      title: "Sisyphus",
+      message: "Build completed successfully! ✅"
+    )
+  end
+
+  # ========================================
+  # SCREENSHOTS
+  # ========================================
+
+  desc "Generate new localized screenshots"
+  lane :screenshots do
+    capture_screenshots(scheme: "Runner")
+    upload_to_app_store(
+      skip_binary_upload: true,
+      skip_metadata: true
+    )
+  end
+
+  # ========================================
+  # CERTIFICATES & PROVISIONING
+  # ========================================
+
+  desc "Sync code signing certificates and provisioning profiles"
+  desc "Usage: fastlane sync_certificates"
+  lane :sync_certificates do
+    match(
+      type: "appstore",
+      readonly: true
+    )
+  end
+
+  # ========================================
+  # HELPER LANES
+  # ========================================
+
+  desc "Increment build number"
+  lane :bump_build do
+    increment_build_number(
+      build_number: latest_testflight_build_number + 1,
+      xcodeproj: "Runner.xcodeproj"
+    )
+  end
+
+  desc "Clean build artifacts"
+  lane :clean do
+    Dir.chdir("..") do
+      sh("flutter", "clean")
+    end
+    clean_build_artifacts
+    notification(message: "Cleaned build artifacts 🧹")
+  end
+
+end

@@ -1,0 +1,9 @@
+Initial release of Sisyphus!
+
+• Track happiness every 30 minutes
+• Simple drag gesture to set your mood
+• Heatmap visualization of patterns
+• Memorable Moments carousel
+• Customizable notifications
+• Dark mode support
+• Privacy-first: all data stays on your device

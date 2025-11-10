@@ -1,0 +1,11 @@
+This is a personal happiness tracking app. No account or login is required - all data is stored locally on the device. The app uses half-hourly notifications that can be customized or disabled in settings.
+
+To test the app:
+1. Open the app
+2. Drag horizontally on any timeslot to set a happiness score
+3. Tap a timeslot to add a description
+4. Navigate between dates using the arrows
+5. View the heatmap and memorable moments from the analysis tab
+6. Configure notifications in settings
+
+All features work offline. No special test accounts needed.
