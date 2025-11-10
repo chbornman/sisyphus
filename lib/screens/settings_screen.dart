@@ -442,7 +442,7 @@ class _TimeRangePicker extends ConsumerWidget {
 }
 
 /// Time picker wheel (30-minute increments)
-class _HourPicker extends StatelessWidget {
+class _HourPicker extends StatefulWidget {
   final int hour; // Actually time index 0-47
   final TimeFormat timeFormat;
   final ValueChanged<int> onChanged;
@@ -453,75 +453,111 @@ class _HourPicker extends StatelessWidget {
     required this.onChanged,
   });
 
+  @override
+  State<_HourPicker> createState() => _HourPickerState();
+}
+
+class _HourPickerState extends State<_HourPicker> {
   String _formatTimeIndex(int timeIndex) {
-    return TimeUtils.formatTimeForDisplay(timeIndex, timeFormat);
+    return TimeUtils.formatTimeForDisplay(timeIndex, widget.timeFormat);
   }
 
   void _showWheelPicker(BuildContext context) {
     final theme = Theme.of(context);
+    // Buffer the selected index while user scrolls the wheel
+    int tempSelectedIndex = widget.hour;
 
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        height: 300,
-        color: theme.colorScheme.surface,
-        child: Column(
-          children: [
-            // Header
-            Padding(
-              padding: EdgeInsets.all(AppTheme.spacing2),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel'),
-                  ),
-                  Text(
-                    'Select Time',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: 300,
+          color: theme.colorScheme.surface,
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: EdgeInsets.all(AppTheme.spacing2),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Done'),
-                  ),
-                ],
-              ),
-            ),
-            // Wheel picker
-            Expanded(
-              child: ListWheelScrollView.useDelegate(
-                itemExtent: 50,
-                perspective: 0.005,
-                diameterRatio: 1.2,
-                physics: const FixedExtentScrollPhysics(),
-                controller: FixedExtentScrollController(initialItem: hour),
-                onSelectedItemChanged: (index) {
-                  onChanged(index);
-                },
-                childDelegate: ListWheelChildBuilderDelegate(
-                  builder: (context, index) {
-                    if (index < 0 || index >= 48) return null;
-                    final isSelected = index == hour;
-                    return Center(
-                      child: Text(
-                        _formatTimeIndex(index),
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          color: isSelected
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
+                    Text(
+                      'Select Time',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                    );
-                  },
-                  childCount: 48,
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        // Only call onChanged when Done is tapped
+                        widget.onChanged(tempSelectedIndex);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Done'),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              // Wheel picker with selection indicator
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Selection highlight background
+                    Center(
+                      child: Container(
+                        height: 50,
+                        margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing3),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                          border: Border.all(
+                            color: theme.colorScheme.primary.withValues(alpha: 0.4),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // The actual wheel
+                    ListWheelScrollView.useDelegate(
+                      itemExtent: 50,
+                      perspective: 0.005,
+                      diameterRatio: 1.2,
+                      physics: const FixedExtentScrollPhysics(),
+                      controller: FixedExtentScrollController(initialItem: widget.hour),
+                      onSelectedItemChanged: (index) {
+                        // Store selection temporarily and update UI to show new selection
+                        setModalState(() {
+                          tempSelectedIndex = index;
+                        });
+                      },
+                      childDelegate: ListWheelChildBuilderDelegate(
+                        builder: (context, index) {
+                          if (index < 0 || index >= 48) return null;
+                          final isSelected = index == tempSelectedIndex;
+                          return Center(
+                            child: Text(
+                              _formatTimeIndex(index),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: isSelected
+                                    ? theme.colorScheme.primary
+                                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                          );
+                        },
+                        childCount: 48,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -546,7 +582,7 @@ class _HourPicker extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              _formatTimeIndex(hour),
+              _formatTimeIndex(widget.hour),
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
