@@ -67,7 +67,7 @@ class DatabaseMigrations {
 
     await db.insert('settings', {
       'key': 'notifications_enabled',
-      'value': 'true',
+      'value': 'false', // Default to OFF - user must explicitly enable
     });
 
     await db.insert('settings', {

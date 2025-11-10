@@ -11,6 +11,7 @@ import '../providers/selected_date_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/scroll_target_provider.dart';
 import '../providers/notification_provider.dart';
+import '../providers/database_provider.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
@@ -63,10 +64,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       settingsAsync.whenData((settings) async {
         if (settings.notificationsEnabled) {
           final notificationService = ref.read(notificationServiceProvider);
-          await notificationService.rescheduleNotifications(
-            startIndex: settings.notificationStartHour,
-            endIndex: settings.notificationEndHour,
-          );
+
+          // Check if we already have permission before scheduling
+          final hasPermission = await notificationService.areNotificationsPermitted();
+
+          if (hasPermission) {
+            // Permission already granted - reschedule notifications
+            await notificationService.rescheduleNotifications(
+              startIndex: settings.notificationStartHour,
+              endIndex: settings.notificationEndHour,
+            );
+          } else {
+            // Permission not granted - disable notifications in settings
+            // User will need to explicitly enable them (triggering permission request)
+            final dbService = ref.read(databaseServiceProvider);
+            await dbService.updateSetting('notifications_enabled', 'false');
+            ref.invalidate(settingsProvider);
+          }
         }
       });
     } catch (e) {
