@@ -12,6 +12,11 @@ class WelcomeModal extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final settingsAsync = ref.watch(settingsProvider);
+    final accentColor = settingsAsync.maybeWhen(
+      data: (settings) => settings.accentColor,
+      orElse: () => theme.colorScheme.primary,
+    );
 
     return Dialog(
       shape: RoundedRectangleBorder(
@@ -58,6 +63,8 @@ class WelcomeModal extends ConsumerWidget {
               child: ElevatedButton(
                 onPressed: () => _handleEnableReminders(context, ref),
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: accentColor,
+                  foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: AppTheme.spacing2),
                 ),
                 child: const Text('Enable Reminders'),

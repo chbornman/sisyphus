@@ -95,11 +95,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   /// Check and show welcome modal on first app launch
   void _checkAndShowWelcomeModal() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final settingsAsync = ref.read(settingsProvider);
-      settingsAsync.whenData((settings) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        // Wait for settings to load from database
+        final settings = await ref.read(settingsProvider.future);
+
         debugPrint('🎯 Welcome modal check: hasSeenWelcome = ${settings.hasSeenWelcome}');
-        if (!settings.hasSeenWelcome) {
+
+        if (!settings.hasSeenWelcome && mounted) {
           debugPrint('📱 Showing welcome modal');
           showDialog(
             context: context,
@@ -109,7 +112,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         } else {
           debugPrint('✅ Welcome already seen, skipping modal');
         }
-      });
+      } catch (e) {
+        debugPrint('❌ Error checking welcome modal: $e');
+      }
     });
   }
 
