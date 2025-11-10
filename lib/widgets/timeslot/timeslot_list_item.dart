@@ -128,7 +128,15 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
     // Wrap entire timeslot for consistent layout
     return Container(
       height: AppTheme.timeslotHeight,
-      margin: EdgeInsets.symmetric(
+      // Add darker background for hours outside notification range
+      // Similar to Google Calendar's nighttime hours styling - full-width stripe
+      color: widget.isOutsideNotificationHours
+          ? theme.colorScheme.onSurface.withValues(
+              alpha: theme.brightness == Brightness.dark ? 0.1 : 0.05,
+            )
+          : null,
+      // Use padding instead of margin for consistent vertical spacing
+      padding: EdgeInsets.symmetric(
         horizontal: AppTheme.spacing4,
         vertical: AppTheme.spacing1,
       ),
@@ -153,11 +161,13 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
                   color: widget.isFuture
                       ? theme.colorScheme.onSurface.withValues(alpha: 0.05)
                       : widget.isOutsideNotificationHours
-                          ? scoreColor.withValues(alpha: scoreColor.a * 0.3)
+                          ? scoreColor.withValues(alpha: scoreColor.a * 0.2)
                           : scoreColor,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                   border: Border.all(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                    color: theme.colorScheme.onSurface.withValues(
+                      alpha: widget.isOutsideNotificationHours ? 0.05 : 0.1,
+                    ),
                     width: AppTheme.borderWidth,
                   ),
                 ),
@@ -187,23 +197,16 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
                         ),
                       ),
 
-                    // Empty state hint
+                    // Empty state hint (not shown for future timeslots)
                     if (displayScore == 0 &&
                         (widget.timeslot.description == null ||
-                            widget.timeslot.description!.isEmpty))
+                            widget.timeslot.description!.isEmpty) &&
+                        !widget.isFuture)
                       Center(
                         child: Text(
-                          widget.isFuture
-                              ? 'Future timeslot'
-                              : widget.isOutsideNotificationHours
-                                  ? 'Outside notification hours'
-                                  : 'Drag to score • Tap to add note',
+                          'Drag to score • Tap to add note',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(
-                              alpha: widget.isFuture || widget.isOutsideNotificationHours
-                                  ? 0.3
-                                  : 0.4,
-                            ),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
