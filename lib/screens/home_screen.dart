@@ -8,6 +8,7 @@ import '../providers/timeslot_provider.dart';
 import '../providers/selected_date_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
+import 'analysis_screen.dart';
 import 'settings_screen.dart';
 
 /// Home screen - Main timeslot list view
@@ -154,14 +155,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               tooltip: 'Next day',
               onPressed: _goToNextDay,
             ),
-          // Analysis view (placeholder)
+          // Analysis view
           IconButton(
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Analysis',
             onPressed: () {
-              // TODO: Navigate to analysis screen
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Analysis view coming in Phase 4!')),
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const AnalysisScreen(),
+                ),
               );
             },
           ),

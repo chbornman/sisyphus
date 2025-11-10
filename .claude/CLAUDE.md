@@ -174,7 +174,7 @@ lib/
 ✅ **Phase 1:** Foundation (database, models, providers, theme)
 ✅ **Phase 2:** Core Feature (timeslot tracking with drag gestures)
 🚫 **Phase 3:** Calendar (skipped - on back burner)
-⏳ **Phase 4:** Analysis (heatmap and top/bottom moments)
+✅ **Phase 4:** Analysis (heatmap and top/bottom moments carousel)
 ⏳ **Phase 5:** Notifications (half-hourly reminders)
 ✅ **Phase 6:** Settings (theme, colors, notification config, time format)
 
