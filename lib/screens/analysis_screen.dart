@@ -331,7 +331,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
         borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         border: Border.all(
           color: scoreColor,
-          width: 2,
+          width: 1,
         ),
       ),
       child: Column(
