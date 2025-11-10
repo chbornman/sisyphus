@@ -45,5 +45,12 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>We need permission to send you half-hourly reminders to track your happiness throughout the day.</string>
 </dict>
 </plist>

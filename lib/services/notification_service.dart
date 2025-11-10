@@ -55,25 +55,28 @@ class NotificationService {
   /// Request notification permissions (iOS requires explicit permission)
   /// Returns true if permission granted, false otherwise
   Future<bool> requestPermissions() async {
-    // On Android 13+, need to request permission
-    if (await Permission.notification.isDenied) {
-      final status = await Permission.notification.request();
-      if (status.isDenied || status.isPermanentlyDenied) {
-        return false;
-      }
+    // iOS-specific permission request (must be called first on iOS)
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+
+    if (iosPlugin != null) {
+      // We're on iOS - request permissions through the plugin
+      final bool? result = await iosPlugin.requestPermissions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      return result ?? false; // If result is null, something went wrong
     }
 
-    // iOS-specific permission request
-    final bool? result = await _notifications
-        .resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>()
-        ?.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
+    // On Android 13+, need to request permission
+    final status = await Permission.notification.request();
+    if (status.isDenied || status.isPermanentlyDenied) {
+      return false;
+    }
 
-    return result ?? true; // Android returns null, which means granted
+    return true; // Permission granted on Android
   }
 
   /// Check if notifications are currently permitted
