@@ -48,9 +48,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
   late ScrollController _heatmapScrollController;
   bool _hasScrolledToToday = false;
 
-  // Current visible month in heatmap
-  String _currentVisibleMonth = '';
-
   @override
   void initState() {
     super.initState();
@@ -136,14 +133,6 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       onScrollComplete: () {
         _hasScrolledToToday = true;
       },
-      onVisibleMonthChanged: (month) {
-        if (_currentVisibleMonth != month) {
-          setState(() {
-            _currentVisibleMonth = month;
-          });
-        }
-      },
-      currentVisibleMonth: _currentVisibleMonth,
     );
   }
 
@@ -392,15 +381,11 @@ class _HeatmapWidget extends ConsumerStatefulWidget {
   final ScrollController scrollController;
   final bool hasScrolledToToday;
   final VoidCallback onScrollComplete;
-  final ValueChanged<String> onVisibleMonthChanged;
-  final String currentVisibleMonth;
 
   const _HeatmapWidget({
     required this.scrollController,
     required this.hasScrolledToToday,
     required this.onScrollComplete,
-    required this.onVisibleMonthChanged,
-    required this.currentVisibleMonth,
   });
 
   @override
@@ -408,21 +393,13 @@ class _HeatmapWidget extends ConsumerStatefulWidget {
 }
 
 class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
-  List<String> _allDates = [];
   Future<List<Timeslot>>? _timeslotsFuture;
   String? _cachedDateRange;
 
   @override
   void initState() {
     super.initState();
-    widget.scrollController.addListener(_onScroll);
     _initializeData();
-  }
-
-  @override
-  void dispose() {
-    widget.scrollController.removeListener(_onScroll);
-    super.dispose();
   }
 
   void _initializeData() {
@@ -438,49 +415,6 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
       _cachedDateRange = dateRangeKey;
       _timeslotsFuture = dbService.getTimeslotsInRange(dateRangeStart, dateRangeEnd);
     }
-  }
-
-  /// Determine which month label to show based on leftmost visible date
-  /// Shows the month of the leftmost visible date in the viewport
-  void _onScroll() {
-    if (_allDates.isEmpty || !widget.scrollController.hasClients) return;
-
-    const columnWidth = 20.0 + 8.0; // width (20) + right padding (8)
-    final scrollOffset = widget.scrollController.offset;
-
-    // Calculate first visible column index
-    final firstVisibleIndex = (scrollOffset / columnWidth).floor();
-
-    if (firstVisibleIndex < 0 || firstVisibleIndex >= _allDates.length) return;
-
-    // Check if the 1st of any month is visible in first half of viewport
-    // If so, hide the sticky label (the inline label is sufficient)
-    bool firstOfMonthVisible = false;
-    for (int i = firstVisibleIndex;
-         i < firstVisibleIndex + 7 && i < _allDates.length;
-         i++) {
-      final date = AppDateUtils.fromDbFormat(_allDates[i]);
-      if (date.day == 1) {
-        firstOfMonthVisible = true;
-        break;
-      }
-    }
-
-    if (firstOfMonthVisible) {
-      widget.onVisibleMonthChanged('');
-      return;
-    }
-
-    // Show the month of the leftmost visible date
-    final leftmostDate = AppDateUtils.fromDbFormat(_allDates[firstVisibleIndex]);
-    final monthLabel = _getMonthAbbreviation(leftmostDate.month);
-    widget.onVisibleMonthChanged(monthLabel);
-  }
-
-  String _getMonthAbbreviation(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[month - 1];
   }
 
   @override
@@ -525,9 +459,6 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
           dates.add(AppDateUtils.toDbFormat(currentDate));
           currentDate = currentDate.add(const Duration(days: 1));
         }
-
-        // Store dates for scroll tracking
-        _allDates = dates;
 
         if (dates.isEmpty) {
           return Container(
@@ -576,49 +507,20 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
 
         return SizedBox(
           height: 315, // Increased to accommodate month labels
-          child: Stack(
-            children: [
-              // Main scrollable heatmap - fixed width showing 14 days
-              SizedBox(
-                width: viewportWidth,
-                child: SingleChildScrollView(
-                  controller: widget.scrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Heatmap grid
-                      ...dates.map((date) {
-                        final daySlots = slotsByDate[date] ?? [];
-                        return _buildDayColumn(date, daySlots, accentColor, theme);
-                      }),
-                    ],
-                  ),
-                ),
-              ),
-              // Sticky month label overlay
-              if (widget.currentVisibleMonth.isNotEmpty)
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  child: Container(
-                    height: 12,
-                    padding: EdgeInsets.symmetric(horizontal: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                    ),
-                    child: Text(
-                      widget.currentVisibleMonth, // Can be "Sep" or "Sep Oct"
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                      textAlign: TextAlign.left,
-                    ),
-                  ),
-                ),
-            ],
+          width: viewportWidth,
+          child: SingleChildScrollView(
+            controller: widget.scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Heatmap grid
+                ...dates.map((date) {
+                  final daySlots = slotsByDate[date] ?? [];
+                  return _buildDayColumn(date, daySlots, accentColor, theme);
+                }),
+              ],
+            ),
           ),
         );
       },
@@ -638,7 +540,6 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
     };
 
     final dateObj = AppDateUtils.fromDbFormat(date);
-    final isFirstOfMonth = dateObj.day == 1;
 
     return GestureDetector(
       // Make entire column area tappable, not just the dots
@@ -666,20 +567,18 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
           width: 20, // Fixed width for consistent spacing
           child: Column(
             children: [
-            // Month label (only show on 1st of month)
+            // Month label (show on every column)
             SizedBox(
               height: 12,
-              child: isFirstOfMonth
-                  ? Text(
-                      _getMonthAbbreviation(dateObj.month),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                      textAlign: TextAlign.center,
-                    )
-                  : null,
+              child: Text(
+                _getMonthAbbreviation(dateObj.month),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
 
             // Date header (abbreviated, centered)
@@ -718,4 +617,11 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
     ),
   );
 }
+
+  /// Get month abbreviation from month number (1-12)
+  String _getMonthAbbreviation(int month) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[month - 1];
+  }
 }
