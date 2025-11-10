@@ -300,11 +300,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                 children: [
                   Image.asset(
                     'assets/app_icon.png',
-                    width: 64,
-                    height: 64,
-                    opacity: AlwaysStoppedAnimation(0.5),
+                    width: 56,
+                    height: 56,
+                    opacity: const AlwaysStoppedAnimation(0.5),
                   ),
-                  SizedBox(height: AppTheme.spacing3),
+                  SizedBox(height: AppTheme.spacing2),
                   Text(
                     'Check back once you\'ve logged 5 timeslots',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -312,7 +312,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: AppTheme.spacing2),
+                  SizedBox(height: AppTheme.spacing1),
                   Text(
                     'Track your happiness throughout the day to see your top and bottom moments',
                     style: theme.textTheme.bodyMedium?.copyWith(
