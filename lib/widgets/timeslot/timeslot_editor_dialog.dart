@@ -19,7 +19,8 @@ class TimeslotEditorDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TimeslotEditorDialog> createState() => _TimeslotEditorDialogState();
+  ConsumerState<TimeslotEditorDialog> createState() =>
+      _TimeslotEditorDialogState();
 }
 
 class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
@@ -46,11 +47,13 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
     final theme = Theme.of(context);
 
     // Get time format from settings
-    final timeFormat = ref.watch(settingsProvider).when(
-      data: (settings) => settings.timeFormat,
-      loading: () => TimeFormat.twelveHour,
-      error: (_, __) => TimeFormat.twelveHour,
-    );
+    final timeFormat = ref
+        .watch(settingsProvider)
+        .when(
+          data: (settings) => settings.timeFormat,
+          loading: () => TimeFormat.twelveHour,
+          error: (_, __) => TimeFormat.twelveHour,
+        );
 
     // Format time according to user preference
     final formattedTime = TimeUtils.formatTimeForDisplay(
@@ -69,15 +72,9 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
             // Header
             Row(
               children: [
-                Icon(
-                  Icons.edit_note,
-                  color: theme.colorScheme.primary,
-                ),
+                Icon(Icons.edit_note, color: theme.colorScheme.primary),
                 SizedBox(width: AppTheme.spacing2),
-                Text(
-                  formattedTime,
-                  style: theme.textTheme.headlineSmall,
-                ),
+                Text(formattedTime, style: theme.textTheme.headlineSmall),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -89,10 +86,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
             SizedBox(height: AppTheme.spacing4),
 
             // Happiness score slider
-            Text(
-              'Happiness Score',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('Happiness Score', style: theme.textTheme.labelLarge),
             SizedBox(height: AppTheme.spacing2),
 
             Row(
@@ -154,17 +148,14 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
             SizedBox(height: AppTheme.spacing6),
 
             // Description input
-            Text(
-              'What were you doing?',
-              style: theme.textTheme.labelLarge,
-            ),
+            Text('What were you doing?', style: theme.textTheme.labelLarge),
             SizedBox(height: AppTheme.spacing2),
 
             TextField(
               controller: _descriptionController,
               maxLines: 3,
               decoration: InputDecoration(
-                hintText: 'Add a note (optional)',
+                hintText: 'Add a note',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                 ),
@@ -183,10 +174,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
                   child: const Text('Cancel'),
                 ),
                 SizedBox(width: AppTheme.spacing2),
-                FilledButton(
-                  onPressed: _handleSave,
-                  child: const Text('Save'),
-                ),
+                FilledButton(onPressed: _handleSave, child: const Text('Save')),
               ],
             ),
           ],
@@ -197,10 +185,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
 
   void _handleSave() {
     final description = _descriptionController.text.trim();
-    widget.onSave(
-      description.isEmpty ? null : description,
-      _score,
-    );
+    widget.onSave(description.isEmpty ? null : description, _score);
     Navigator.of(context).pop();
   }
 }
