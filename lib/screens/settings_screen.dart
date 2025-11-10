@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/constants/app_theme.dart';
+import '../core/utils/time_utils.dart';
 import '../models/app_settings.dart';
 import '../providers/settings_provider.dart';
 
@@ -27,22 +28,6 @@ class SettingsScreen extends ConsumerWidget {
           return ListView(
             padding: EdgeInsets.all(AppTheme.spacing2),
             children: [
-              // Appearance Section
-              _buildSectionHeader('Appearance', theme),
-              SizedBox(height: AppTheme.spacing2),
-
-              // Theme toggle
-              _ThemeToggle(currentTheme: settings.themeMode),
-              SizedBox(height: AppTheme.spacing2),
-
-              // Accent color picker
-              _AccentColorPicker(currentColor: settings.accentColor),
-              SizedBox(height: AppTheme.spacing2),
-
-              // Time format toggle
-              _TimeFormatToggle(currentFormat: settings.timeFormat),
-              SizedBox(height: AppTheme.spacing4),
-
               // Notifications Section
               _buildSectionHeader('Notifications', theme),
               SizedBox(height: AppTheme.spacing2),
@@ -58,7 +43,24 @@ class SettingsScreen extends ConsumerWidget {
                 _TimeRangePicker(
                   startHour: settings.notificationStartHour,
                   endHour: settings.notificationEndHour,
+                  timeFormat: settings.timeFormat,
                 ),
+              SizedBox(height: AppTheme.spacing4),
+
+              // Appearance Section
+              _buildSectionHeader('Appearance', theme),
+              SizedBox(height: AppTheme.spacing2),
+
+              // Accent color picker
+              _AccentColorPicker(currentColor: settings.accentColor),
+              SizedBox(height: AppTheme.spacing2),
+
+              // Time format toggle
+              _TimeFormatToggle(currentFormat: settings.timeFormat),
+              SizedBox(height: AppTheme.spacing2),
+
+              // Theme toggle
+              _ThemeToggle(currentTheme: settings.themeMode),
             ],
           );
         },
@@ -239,7 +241,8 @@ class _AccentColorPicker extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                       border: isSelected
                           ? Border.all(
-                              color: theme.colorScheme.onSurface,
+                              // Use subtle border matching home screen timeslot items
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
                               width: 3,
                             )
                           : null,
@@ -345,10 +348,12 @@ class _NotificationToggle extends ConsumerWidget {
 class _TimeRangePicker extends ConsumerWidget {
   final int startHour;
   final int endHour;
+  final TimeFormat timeFormat;
 
   const _TimeRangePicker({
     required this.startHour,
     required this.endHour,
+    required this.timeFormat,
   });
 
   @override
@@ -384,6 +389,7 @@ class _TimeRangePicker extends ConsumerWidget {
                 // Start time picker
                 _HourPicker(
                   hour: startHour,
+                  timeFormat: timeFormat,
                   onChanged: (newStartHour) {
                     if (newStartHour < endHour) {
                       ref.read(settingsProvider.notifier).updateNotificationHours(
@@ -405,6 +411,7 @@ class _TimeRangePicker extends ConsumerWidget {
                 // End time picker
                 _HourPicker(
                   hour: endHour,
+                  timeFormat: timeFormat,
                   onChanged: (newEndHour) {
                     if (newEndHour > startHour) {
                       ref.read(settingsProvider.notifier).updateNotificationHours(
@@ -436,19 +443,17 @@ class _TimeRangePicker extends ConsumerWidget {
 /// Time picker wheel (30-minute increments)
 class _HourPicker extends StatelessWidget {
   final int hour; // Actually time index 0-47
+  final TimeFormat timeFormat;
   final ValueChanged<int> onChanged;
 
   const _HourPicker({
     required this.hour,
+    required this.timeFormat,
     required this.onChanged,
   });
 
   String _formatTimeIndex(int timeIndex) {
-    final hour24 = timeIndex ~/ 2; // 0-23
-    final minutes = (timeIndex % 2) * 30; // 0 or 30
-    final period = hour24 < 12 ? 'AM' : 'PM';
-    final displayHour = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
-    return '$displayHour:${minutes.toString().padLeft(2, '0')} $period';
+    return TimeUtils.formatTimeForDisplay(timeIndex, timeFormat);
   }
 
   void _showWheelPicker(BuildContext context) {

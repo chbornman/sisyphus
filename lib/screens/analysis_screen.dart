@@ -116,16 +116,16 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
             _buildSectionHeader('Happiness Patterns', theme),
             SizedBox(height: AppTheme.spacing3),
             _buildHeatmap(theme),
-            SizedBox(height: AppTheme.spacing6),
+            SizedBox(height: AppTheme.spacing2),
 
             // Moments carousel section
             _buildSectionHeader('Memorable Moments', theme),
             SizedBox(height: AppTheme.spacing3),
-            _buildMomentsControls(theme),
-            SizedBox(height: AppTheme.spacing3),
             _buildMomentsCarousel(theme),
             SizedBox(height: AppTheme.spacing2),
             _buildCarouselDots(theme),
+            SizedBox(height: AppTheme.spacing3),
+            _buildMomentsControls(theme),
           ],
         ),
       ),
@@ -353,29 +353,19 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
           ),
           SizedBox(height: AppTheme.spacing2),
 
-          // Date and time
-          Text(
-            formattedDate,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            formattedTime,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-            ),
-          ),
-
-          // Description
-          SizedBox(height: AppTheme.spacing1),
+          // Description - prominent display
           if (moment.description != null && moment.description!.isNotEmpty)
-            Text(
-              moment.description!,
-              style: theme.textTheme.bodyMedium,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing2),
+              child: Text(
+                moment.description!,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             )
           else
             Text(
@@ -386,6 +376,33 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               ),
               textAlign: TextAlign.center,
             ),
+
+          SizedBox(height: AppTheme.spacing2),
+
+          // Date and time on same line
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                formattedDate,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                ' • ',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+              Text(
+                formattedTime,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -434,34 +451,28 @@ class _HeatmapWidget extends ConsumerStatefulWidget {
 }
 
 class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
-  Future<List<Timeslot>>? _timeslotsFuture;
-  String? _cachedDateRange;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeData();
-  }
-
-  void _initializeData() {
-    final dbService = ref.read(databaseServiceProvider);
-    final endDate = DateTime.now();
-    final startDate = endDate.subtract(const Duration(days: 90));
-    final dateRangeStart = AppDateUtils.toDbFormat(startDate);
-    final dateRangeEnd = AppDateUtils.toDbFormat(endDate);
-    final dateRangeKey = '$dateRangeStart-$dateRangeEnd';
-
-    // Only create new Future if date range changed (e.g., day changed)
-    if (_cachedDateRange != dateRangeKey) {
-      _cachedDateRange = dateRangeKey;
-      _timeslotsFuture = dbService.getTimeslotsInRange(dateRangeStart, dateRangeEnd);
-    }
-  }
+  // Tap vs drag detection
+  // WHY: Track initial tap position to distinguish between taps and scroll drags.
+  // Only trigger navigation if finger hasn't moved more than threshold (10px).
+  double? _tapDownX;
+  double? _tapDownY;
 
   @override
   Widget build(BuildContext context) {
-    // Check if date range changed and update if needed
-    _initializeData();
+    // Use ref.watch() to properly react to provider changes
+    // WHY: ref.read() in build is safe and proper. ref.watch() ensures we get
+    // fresh data and rebuilds when the provider changes.
+    final dbService = ref.watch(databaseServiceProvider);
+
+    // Calculate date range fresh on each build
+    // WHY: This is cheap (just date arithmetic) and ensures we always show
+    // the current date range. The endDate is calculated as the END of today,
+    // not midnight, to ensure today is fully included.
+    final now = DateTime.now();
+    final endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
+    final startDate = endDate.subtract(const Duration(days: 90));
+    final dateRangeStart = AppDateUtils.toDbFormat(startDate);
+    final dateRangeEnd = AppDateUtils.toDbFormat(endDate);
 
     final theme = Theme.of(context);
     final settingsAsync = ref.watch(settingsProvider);
@@ -473,12 +484,11 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
       error: (_, __) => theme.colorScheme.primary,
     );
 
-    // Calculate date range for building the dates list
-    final endDate = DateTime.now();
-    final startDate = DateTime.now().subtract(const Duration(days: 90));
-
     return FutureBuilder<List<Timeslot>>(
-      future: _timeslotsFuture,
+      // Fetch data using the freshly calculated date range
+      // WHY: We calculate dates fresh each build to ensure we always show current data.
+      // FutureBuilder will still cache the future as long as the parameters don't change.
+      future: dbService.getTimeslotsInRange(dateRangeStart, dateRangeEnd),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const SizedBox(
@@ -586,21 +596,39 @@ class _HeatmapWidgetState extends ConsumerState<_HeatmapWidget> {
       // Make entire column area tappable, not just the dots
       behavior: HitTestBehavior.opaque,
       onTapDown: (details) {
-        // Calculate which timeslot was tapped based on y-position
-        // Skip the month label (12px) and date header (~20px) = ~32px offset
-        const headerOffset = 32.0;
-        final tapY = details.localPosition.dy - headerOffset;
+        // Store initial tap position for drag threshold detection
+        // WHY: We need to distinguish between taps (navigation) and drags (scrolling).
+        // Store the position here, then check movement in onTapUp.
+        _tapDownX = details.localPosition.dx;
+        _tapDownY = details.localPosition.dy;
+      },
+      onTapUp: (details) {
+        // Only trigger navigation if finger hasn't moved more than 10px
+        // WHY: Prevents accidental navigation when user is trying to scroll.
+        // 10px is the standard touch slop threshold on mobile platforms.
+        const dragThreshold = 10.0;
+        final dx = (details.localPosition.dx - _tapDownX!).abs();
+        final dy = (details.localPosition.dy - _tapDownY!).abs();
 
-        // Each dot is 5px tall with 0.5px margin = 5.5px per timeslot
-        const dotHeight = 5.5;
-        final timeslotIndex = (tapY / dotHeight).floor().clamp(0, 47);
+        if (dx < dragThreshold && dy < dragThreshold) {
+          // It's a tap, not a drag - navigate to the timeslot
+          // Calculate which timeslot was tapped based on y-position
+          // Skip the month label (12px) and date header (~20px) = ~32px offset
+          const headerOffset = 32.0;
+          final tapY = details.localPosition.dy - headerOffset;
 
-        // Update selected date and scroll target
-        ref.read(selectedDateProvider.notifier).selectDate(dateObj);
-        ref.read(scrollTargetProvider.notifier).setTarget(timeslotIndex);
+          // Each dot is 5px tall with 0.5px margin = 5.5px per timeslot
+          const dotHeight = 5.5;
+          final timeslotIndex = (tapY / dotHeight).floor().clamp(0, 47);
 
-        // Navigate back to home screen
-        Navigator.of(context).pop();
+          // Update selected date and scroll target
+          ref.read(selectedDateProvider.notifier).selectDate(dateObj);
+          ref.read(scrollTargetProvider.notifier).setTarget(timeslotIndex);
+
+          // Navigate back to home screen
+          Navigator.of(context).pop();
+        }
+        // If movement exceeded threshold, do nothing (user was scrolling)
       },
       child: Padding(
         padding: EdgeInsets.only(right: AppTheme.spacing1),
