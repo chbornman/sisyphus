@@ -3,6 +3,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/app_settings.dart';
 import '../core/utils/color_utils.dart';
 import 'database_provider.dart';
+import 'notification_provider.dart';
 
 part 'settings_provider.g.dart';
 
@@ -38,10 +39,29 @@ class Settings extends _$Settings {
   /// Toggle notifications on/off
   Future<void> toggleNotifications(bool enabled) async {
     final dbService = ref.read(databaseServiceProvider);
+    final notificationService = ref.read(notificationServiceProvider);
+
+    // Update database first
     await dbService.updateSetting('notifications_enabled', enabled.toString());
 
-    // TODO: Update notification scheduling
-    // This will be implemented when we add NotificationService
+    if (enabled) {
+      // Request permissions and schedule notifications
+      final hasPermission = await notificationService.requestPermissions();
+      if (hasPermission) {
+        // Get current settings to know the time range
+        final settings = await dbService.getSettings();
+        await notificationService.scheduleNotifications(
+          startIndex: settings.notificationStartHour,
+          endIndex: settings.notificationEndHour,
+        );
+      } else {
+        // Permission denied - revert the setting
+        await dbService.updateSetting('notifications_enabled', 'false');
+      }
+    } else {
+      // Cancel all notifications when disabled
+      await notificationService.cancelAllNotifications();
+    }
 
     // Refresh state
     ref.invalidateSelf();
@@ -58,13 +78,22 @@ class Settings extends _$Settings {
     }
 
     final dbService = ref.read(databaseServiceProvider);
+    final notificationService = ref.read(notificationServiceProvider);
+
+    // Update database
     await dbService.updateSettings({
       'notification_start_hour': startIndex.toString(),
       'notification_end_hour': endIndex.toString(),
     });
 
-    // TODO: Reschedule notifications
-    // This will be implemented when we add NotificationService
+    // Reschedule notifications if they're currently enabled
+    final settings = await dbService.getSettings();
+    if (settings.notificationsEnabled) {
+      await notificationService.rescheduleNotifications(
+        startIndex: startIndex,
+        endIndex: endIndex,
+      );
+    }
 
     // Refresh state
     ref.invalidateSelf();

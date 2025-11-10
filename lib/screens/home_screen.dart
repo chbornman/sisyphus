@@ -9,6 +9,7 @@ import '../providers/timeslot_provider.dart';
 import '../providers/selected_date_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/scroll_target_provider.dart';
+import '../providers/notification_provider.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
@@ -48,6 +49,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     // Schedule timer for next timeslot transition
     _scheduleNextTimeslotUpdate();
+
+    // Initialize notifications (reschedule if enabled)
+    _initializeNotifications();
+  }
+
+  /// Initialize and reschedule notifications on app startup
+  /// This ensures notifications stay scheduled after app updates or device reboots
+  Future<void> _initializeNotifications() async {
+    try {
+      final settingsAsync = ref.read(settingsProvider);
+      settingsAsync.whenData((settings) async {
+        if (settings.notificationsEnabled) {
+          final notificationService = ref.read(notificationServiceProvider);
+          await notificationService.rescheduleNotifications(
+            startIndex: settings.notificationStartHour,
+            endIndex: settings.notificationEndHour,
+          );
+        }
+      });
+    } catch (e) {
+      // Silently fail - notifications are not critical to app functionality
+      debugPrint('Failed to initialize notifications: $e');
+    }
   }
 
   @override
