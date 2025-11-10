@@ -98,12 +98,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final settingsAsync = ref.read(settingsProvider);
       settingsAsync.whenData((settings) {
+        debugPrint('🎯 Welcome modal check: hasSeenWelcome = ${settings.hasSeenWelcome}');
         if (!settings.hasSeenWelcome) {
+          debugPrint('📱 Showing welcome modal');
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (_) => const WelcomeModal(),
           );
+        } else {
+          debugPrint('✅ Welcome already seen, skipping modal');
         }
       });
     });
