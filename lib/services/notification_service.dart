@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:permission_handler/permission_handler.dart';
@@ -19,7 +20,12 @@ class NotificationService {
   /// Initialize the notification service
   /// Sets up platform-specific configuration and channels
   Future<void> initialize() async {
-    if (_isInitialized) return;
+    if (_isInitialized) {
+      debugPrint('⚠️  NotificationService already initialized');
+      return;
+    }
+
+    debugPrint('🚀 Initializing NotificationService...');
 
     // Android-specific initialization settings
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -43,6 +49,7 @@ class NotificationService {
     );
 
     _isInitialized = true;
+    debugPrint('✅ NotificationService initialized successfully');
   }
 
   /// Called when user taps on a notification
@@ -55,6 +62,8 @@ class NotificationService {
   /// Request notification permissions (iOS requires explicit permission)
   /// Returns true if permission granted, false otherwise
   Future<bool> requestPermissions() async {
+    debugPrint('🔔 Requesting notification permissions...');
+
     // iOS-specific permission request (must be called first on iOS)
     final iosPlugin = _notifications
         .resolvePlatformSpecificImplementation<
@@ -67,15 +76,21 @@ class NotificationService {
         badge: true,
         sound: true,
       );
-      return result ?? false; // If result is null, something went wrong
+      final granted = result ?? false;
+      debugPrint(granted
+          ? '✅ Notification permissions granted (iOS)'
+          : '❌ Notification permissions denied (iOS)');
+      return granted; // If result is null, something went wrong
     }
 
     // On Android 13+, need to request permission
     final status = await Permission.notification.request();
     if (status.isDenied || status.isPermanentlyDenied) {
+      debugPrint('❌ Notification permissions denied (Android)');
       return false;
     }
 
+    debugPrint('✅ Notification permissions granted (Android)');
     return true; // Permission granted on Android
   }
 
@@ -108,11 +123,19 @@ class NotificationService {
       throw ArgumentError('Start index must be before end index');
     }
 
+    // Log notification scheduling start with time range
+    final startTime = TimeUtils.formatTimeForDisplay(startIndex, TimeFormat.twelveHour);
+    final endTime = TimeUtils.formatTimeForDisplay(endIndex, TimeFormat.twelveHour);
+    debugPrint('📅 Starting notification setup...');
+    debugPrint('   Time range: $startTime - $endTime');
+    debugPrint('   Duration: 7 days, ${endIndex - startIndex} slots per day');
+
     // Cancel existing notifications first
     await cancelAllNotifications();
 
     // Schedule notifications for the next 7 days
     final now = tz.TZDateTime.now(tz.local);
+    int scheduledCount = 0;
 
     for (int day = 0; day < 7; day++) {
       final targetDate = now.add(Duration(days: day));
@@ -139,9 +162,12 @@ class NotificationService {
             scheduledTime: scheduledTime,
             timeIndex: timeIndex,
           );
+          scheduledCount++;
         }
       }
     }
+
+    debugPrint('✅ Notification setup complete: $scheduledCount notifications scheduled');
   }
 
   /// Schedule a single notification at a specific time
@@ -199,7 +225,9 @@ class NotificationService {
   /// Cancel all scheduled notifications
   Future<void> cancelAllNotifications() async {
     if (!_isInitialized) return;
+    debugPrint('🔕 Cancelling all scheduled notifications...');
     await _notifications.cancelAll();
+    debugPrint('✅ All notifications cancelled');
   }
 
   /// Cancel specific notification by ID
@@ -220,6 +248,10 @@ class NotificationService {
     required int startIndex,
     required int endIndex,
   }) async {
+    final startTime = TimeUtils.formatTimeForDisplay(startIndex, TimeFormat.twelveHour);
+    final endTime = TimeUtils.formatTimeForDisplay(endIndex, TimeFormat.twelveHour);
+    debugPrint('🔄 Rescheduling notifications with new time range: $startTime - $endTime');
+
     await scheduleNotifications(
       startIndex: startIndex,
       endIndex: endIndex,
