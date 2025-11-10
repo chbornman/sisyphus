@@ -137,10 +137,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return Scaffold(
       appBar: AppBar(
         title: _buildAppBarTitle(selectedDate, theme),
-        // Always show tinted background
-        backgroundColor: theme.colorScheme.surface,
-        surfaceTintColor: theme.colorScheme.primary,
-        elevation: 2,
+        // Stronger tinted background with accent color
+        backgroundColor: Color.alphaBlend(
+          theme.colorScheme.primary.withValues(alpha: 0.08),
+          theme.colorScheme.surface,
+        ),
         actions: [
           // Navigate to previous day
           IconButton(

@@ -18,10 +18,11 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        // Always show tinted background
-        backgroundColor: theme.colorScheme.surface,
-        surfaceTintColor: theme.colorScheme.primary,
-        elevation: 2,
+        // Stronger tinted background with accent color
+        backgroundColor: Color.alphaBlend(
+          theme.colorScheme.primary.withValues(alpha: 0.08),
+          theme.colorScheme.surface,
+        ),
       ),
       body: settingsAsync.when(
         data: (settings) {

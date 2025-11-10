@@ -112,15 +112,23 @@ class AppTheme {
       scaffoldBackgroundColor: lightBackground,
 
       // App bar
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: lightSurface,
         foregroundColor: lightText,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
+        scrolledUnderElevation: 0, // Prevent color changes on scroll
+        titleTextStyle: const TextStyle(
           color: lightText,
           fontSize: 20,
           fontWeight: FontWeight.w600,
+        ),
+        // Add border with accent color tint
+        shape: Border(
+          bottom: BorderSide(
+            color: accentColor.withValues(alpha: 0.3),
+            width: borderWidth,
+          ),
         ),
       ),
 
@@ -181,6 +189,13 @@ class AppTheme {
               borderRadius: BorderRadius.circular(borderRadiusButton),
             ),
           ),
+          side: WidgetStateProperty.resolveWith((states) {
+            // Use subtle border matching home screen timeslot items
+            return BorderSide(
+              color: lightText.withValues(alpha: 0.1),
+              width: borderWidth,
+            );
+          }),
         ),
       ),
 
@@ -228,15 +243,23 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
 
       // App bar
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: darkSurface,
         foregroundColor: darkText,
         elevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
+        scrolledUnderElevation: 0, // Prevent color changes on scroll
+        titleTextStyle: const TextStyle(
           color: darkText,
           fontSize: 20,
           fontWeight: FontWeight.w600,
+        ),
+        // Add border with accent color tint
+        shape: Border(
+          bottom: BorderSide(
+            color: accentColor.withValues(alpha: 0.3),
+            width: borderWidth,
+          ),
         ),
       ),
 
@@ -297,6 +320,13 @@ class AppTheme {
               borderRadius: BorderRadius.circular(borderRadiusButton),
             ),
           ),
+          side: WidgetStateProperty.resolveWith((states) {
+            // Use subtle border matching home screen timeslot items
+            return BorderSide(
+              color: darkText.withValues(alpha: 0.1),
+              width: borderWidth,
+            );
+          }),
         ),
       ),
 

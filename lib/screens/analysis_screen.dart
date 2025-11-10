@@ -102,10 +102,11 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insights'),
-        // Always show tinted background
-        backgroundColor: theme.colorScheme.surface,
-        surfaceTintColor: theme.colorScheme.primary,
-        elevation: 2,
+        // Stronger tinted background with accent color
+        backgroundColor: Color.alphaBlend(
+          theme.colorScheme.primary.withValues(alpha: 0.08),
+          theme.colorScheme.surface,
+        ),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppTheme.spacing4),
@@ -336,18 +337,21 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Score badge
+          // Score badge - fixed size for consistency
           Container(
-            padding: EdgeInsets.all(AppTheme.spacing2),
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: scoreColor,
               shape: BoxShape.circle,
             ),
-            child: Text(
-              moment.happinessScore.toString(),
-              style: theme.textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+            child: Center(
+              child: Text(
+                moment.happinessScore.toString(),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
