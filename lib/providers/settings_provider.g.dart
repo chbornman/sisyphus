@@ -6,7 +6,7 @@ part of 'settings_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$settingsHash() => r'28af722ff67be6f9212ad1c9606aab3bf32630da';
+String _$settingsHash() => r'abda03ddda9782c8cd4bf4a926769f7e42f9453f';
 
 /// Provider for app settings
 /// Manages user preferences including theme, notifications, and colors

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_theme.dart';
+import '../../core/utils/color_utils.dart';
 import '../../core/utils/time_utils.dart';
 import '../../models/app_settings.dart';
 import '../../models/timeslot.dart';
@@ -27,6 +28,12 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
   late TextEditingController _descriptionController;
   late int _score;
 
+  // Track temporary score during drag
+  int? _draggingScore;
+  // Track starting values for relative drag
+  int? _dragStartScore;
+  double? _dragStartX;
+
   @override
   void initState() {
     super.initState();
@@ -46,20 +53,32 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Get settings from provider
+    final settingsAsync = ref.watch(settingsProvider);
+
+    // Get accent color
+    final accentColor = settingsAsync.when(
+      data: (settings) => settings.accentColor,
+      loading: () => theme.colorScheme.primary,
+      error: (_, __) => theme.colorScheme.primary,
+    );
+
     // Get time format from settings
-    final timeFormat = ref
-        .watch(settingsProvider)
-        .when(
-          data: (settings) => settings.timeFormat,
-          loading: () => TimeFormat.twelveHour,
-          error: (_, __) => TimeFormat.twelveHour,
-        );
+    final timeFormat = settingsAsync.when(
+      data: (settings) => settings.timeFormat,
+      loading: () => TimeFormat.twelveHour,
+      error: (_, __) => TimeFormat.twelveHour,
+    );
 
     // Format time according to user preference
     final formattedTime = TimeUtils.formatTimeForDisplay(
       widget.timeslot.timeIndex,
       timeFormat,
     );
+
+    // Use dragging score if actively dragging, otherwise use current score
+    final displayScore = _draggingScore ?? _score;
+    final scoreColor = ColorUtils.getTimeslotColor(accentColor, displayScore);
 
     return Dialog(
       child: Container(
@@ -85,62 +104,48 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
 
             SizedBox(height: AppTheme.spacing4),
 
-            // Happiness score slider
+            // Happiness score slider bar (visual slider like main page)
             Text('Happiness Score', style: theme.textTheme.labelLarge),
-            SizedBox(height: AppTheme.spacing2),
+            SizedBox(height: AppTheme.spacing3),
 
-            Row(
-              children: [
-                Text(
-                  '0',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                Expanded(
-                  child: Slider(
-                    value: _score.toDouble(),
-                    min: 0,
-                    max: 100,
-                    divisions: 100, // 1-point increments for precise selection
-                    label: _score.toString(),
-                    onChanged: (value) {
-                      setState(() {
-                        _score = value.round();
-                      });
-                    },
-                  ),
-                ),
-                Text(
-                  '100',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-            ),
-
-            // Current score display
-            Center(
+            GestureDetector(
+              onHorizontalDragStart: _handleDragStart,
+              onHorizontalDragUpdate: _handleDragUpdate,
+              onHorizontalDragEnd: _handleDragEnd,
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppTheme.spacing4,
-                  vertical: AppTheme.spacing2,
-                ),
+                height: AppTheme.timeslotHeight - (AppTheme.spacing1 * 2), // 56 - 8 = 48px
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  color: scoreColor,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-                ),
-                child: SizedBox(
-                  width: 80, // Fixed width to prevent size changes
-                  child: Text(
-                    _score.toString(),
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
+                  border: Border.all(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                    width: AppTheme.borderWidth,
                   ),
+                ),
+                child: Stack(
+                  children: [
+                    // Score badge
+                    if (displayScore > 0)
+                      Positioned(
+                        right: AppTheme.spacing2,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: _buildScoreBadge(displayScore, theme),
+                        ),
+                      ),
+
+                    // Drag hint
+                    if (displayScore == 0)
+                      Center(
+                        child: Text(
+                          'Drag left or right to score',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -156,6 +161,9 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
               maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Add a note',
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                 ),
@@ -187,5 +195,77 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
     final description = _descriptionController.text.trim();
     widget.onSave(description.isEmpty ? null : description, _score);
     Navigator.of(context).pop();
+  }
+
+  /// Build score badge showing happiness number
+  /// Fixed width to prevent size changes as digits increase
+  Widget _buildScoreBadge(int score, ThemeData theme) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppTheme.spacing2,
+        vertical: AppTheme.spacing1,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        border: Border.all(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+          width: AppTheme.borderWidth,
+        ),
+      ),
+      child: SizedBox(
+        width: 32, // Fixed width to accommodate "100"
+        child: Text(
+          score.toString(),
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  /// Handle drag start - capture starting position and score
+  void _handleDragStart(DragStartDetails details) {
+    setState(() {
+      _dragStartScore = _score;
+      _dragStartX = details.localPosition.dx;
+      _draggingScore = _score;
+    });
+  }
+
+  /// Handle horizontal drag update - relative to start position
+  void _handleDragUpdate(DragUpdateDetails details) {
+    if (_dragStartScore == null || _dragStartX == null) return;
+
+    // Get the width of the draggable area
+    final RenderBox box = context.findRenderObject() as RenderBox;
+    final width = box.size.width;
+
+    // Calculate delta from start position
+    final deltaX = details.localPosition.dx - _dragStartX!;
+
+    // Convert delta to score change (full width = 100 points)
+    final deltaScore = (deltaX / width * 100).round();
+
+    // Apply delta to starting score
+    final newScore = (_dragStartScore! + deltaScore).clamp(0, 100);
+
+    setState(() {
+      _draggingScore = newScore;
+    });
+  }
+
+  /// Handle drag end - save score
+  void _handleDragEnd(DragEndDetails details) {
+    if (_draggingScore != null) {
+      setState(() {
+        _score = _draggingScore!;
+        _draggingScore = null;
+        _dragStartScore = null;
+        _dragStartX = null;
+      });
+    }
   }
 }

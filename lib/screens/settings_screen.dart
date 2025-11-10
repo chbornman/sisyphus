@@ -54,37 +54,11 @@ class SettingsScreen extends ConsumerWidget {
               SizedBox(height: AppTheme.spacing2),
 
               // Time range pickers (only show if notifications enabled)
-              if (settings.notificationsEnabled) ...[
+              if (settings.notificationsEnabled)
                 _TimeRangePicker(
                   startHour: settings.notificationStartHour,
                   endHour: settings.notificationEndHour,
                 ),
-                SizedBox(height: AppTheme.spacing2),
-                Text(
-                  'You\'ll receive reminders every 30 minutes during this time range.',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ],
-
-              SizedBox(height: AppTheme.spacing4),
-
-              // About Section
-              _buildSectionHeader('About', theme),
-              SizedBox(height: AppTheme.spacing2),
-
-              ListTile(
-                title: const Text('Version'),
-                subtitle: const Text('1.0.0'),
-                leading: const Icon(Icons.info_outline),
-              ),
-
-              ListTile(
-                title: const Text('Privacy'),
-                subtitle: const Text('All data is stored locally on your device'),
-                leading: const Icon(Icons.privacy_tip_outlined),
-              ),
             ],
           );
         },
@@ -245,10 +219,12 @@ class _AccentColorPicker extends ConsumerWidget {
               ],
             ),
             SizedBox(height: AppTheme.spacing2),
-            Wrap(
-              spacing: AppTheme.spacing2,
-              runSpacing: AppTheme.spacing2,
-              children: _colorPalette.map((color) {
+            Center(
+              child: Wrap(
+                spacing: AppTheme.spacing2,
+                runSpacing: AppTheme.spacing2,
+                alignment: WrapAlignment.center,
+                children: _colorPalette.map((color) {
                 // Compare colors using toARGB32()
                 final isSelected = color.toARGB32() == currentColor.toARGB32();
                 return GestureDetector(
@@ -278,6 +254,7 @@ class _AccentColorPicker extends ConsumerWidget {
                   ),
                 );
               }).toList(),
+              ),
             ),
           ],
         ),
@@ -398,17 +375,13 @@ class _TimeRangePicker extends ConsumerWidget {
                 ),
               ],
             ),
-            SizedBox(height: AppTheme.spacing3),
+            SizedBox(height: AppTheme.spacing2),
 
-            // Start time picker
+            // Compact time range display
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Expanded(
-                  child: Text(
-                    'Start time',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
+                // Start time picker
                 _HourPicker(
                   hour: startHour,
                   onChanged: (newStartHour) {
@@ -420,19 +393,16 @@ class _TimeRangePicker extends ConsumerWidget {
                     }
                   },
                 ),
-              ],
-            ),
-            SizedBox(height: AppTheme.spacing2),
-
-            // End time picker
-            Row(
-              children: [
-                Expanded(
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: AppTheme.spacing2),
                   child: Text(
-                    'End time',
-                    style: theme.textTheme.bodyMedium,
+                    '—',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
                   ),
                 ),
+                // End time picker
                 _HourPicker(
                   hour: endHour,
                   onChanged: (newEndHour) {
@@ -446,6 +416,16 @@ class _TimeRangePicker extends ConsumerWidget {
                 ),
               ],
             ),
+            SizedBox(height: AppTheme.spacing2),
+
+            // Helper text
+            Text(
+              'You\'ll receive reminders every 30 minutes during this time range.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -453,9 +433,9 @@ class _TimeRangePicker extends ConsumerWidget {
   }
 }
 
-/// Hour picker dropdown
+/// Time picker wheel (30-minute increments)
 class _HourPicker extends StatelessWidget {
-  final int hour;
+  final int hour; // Actually time index 0-47
   final ValueChanged<int> onChanged;
 
   const _HourPicker({
@@ -463,35 +443,115 @@ class _HourPicker extends StatelessWidget {
     required this.onChanged,
   });
 
+  String _formatTimeIndex(int timeIndex) {
+    final hour24 = timeIndex ~/ 2; // 0-23
+    final minutes = (timeIndex % 2) * 30; // 0 or 30
+    final period = hour24 < 12 ? 'AM' : 'PM';
+    final displayHour = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
+    return '$displayHour:${minutes.toString().padLeft(2, '0')} $period';
+  }
+
+  void _showWheelPicker(BuildContext context) {
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Container(
+        height: 300,
+        color: theme.colorScheme.surface,
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: EdgeInsets.all(AppTheme.spacing2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel'),
+                  ),
+                  Text(
+                    'Select Time',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Done'),
+                  ),
+                ],
+              ),
+            ),
+            // Wheel picker
+            Expanded(
+              child: ListWheelScrollView.useDelegate(
+                itemExtent: 50,
+                perspective: 0.005,
+                diameterRatio: 1.2,
+                physics: const FixedExtentScrollPhysics(),
+                controller: FixedExtentScrollController(initialItem: hour),
+                onSelectedItemChanged: (index) {
+                  onChanged(index);
+                },
+                childDelegate: ListWheelChildBuilderDelegate(
+                  builder: (context, index) {
+                    if (index < 0 || index >= 48) return null;
+                    final isSelected = index == hour;
+                    return Center(
+                      child: Text(
+                        _formatTimeIndex(index),
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: isSelected
+                              ? theme.colorScheme.primary
+                              : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  },
+                  childCount: 48,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing2,
-        vertical: AppTheme.spacing1,
-      ),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline,
+    final theme = Theme.of(context);
+
+    return GestureDetector(
+      onTap: () => _showWheelPicker(context),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: AppTheme.spacing3,
+          vertical: AppTheme.spacing2,
         ),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<int>(
-          value: hour,
-          items: List.generate(24, (index) {
-            final period = index < 12 ? 'AM' : 'PM';
-            final displayHour = index == 0 ? 12 : (index > 12 ? index - 12 : index);
-            return DropdownMenuItem(
-              value: index,
-              child: Text('$displayHour:00 $period'),
-            );
-          }),
-          onChanged: (value) {
-            if (value != null) {
-              onChanged(value);
-            }
-          },
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _formatTimeIndex(hour),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(width: AppTheme.spacing1),
+            Icon(
+              Icons.expand_more,
+              size: 20,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ],
         ),
       ),
     );

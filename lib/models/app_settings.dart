@@ -13,8 +13,8 @@ class AppSettings {
   final ThemeMode themeMode;
   final Color accentColor;
   final bool notificationsEnabled;
-  final int notificationStartHour; // 0-23
-  final int notificationEndHour; // 0-23
+  final int notificationStartHour; // 0-47 (time index, 30-min slots)
+  final int notificationEndHour; // 0-47 (time index, 30-min slots)
   final TimeFormat timeFormat;
 
   const AppSettings({
@@ -33,8 +33,8 @@ class AppSettings {
       themeMode: _parseThemeMode(map['theme_mode'] ?? 'system'),
       accentColor: ColorUtils.fromHex(map['accent_color'] ?? '#6366F1'),
       notificationsEnabled: map['notifications_enabled'] == 'true',
-      notificationStartHour: int.tryParse(map['notification_start_hour'] ?? '7') ?? 7,
-      notificationEndHour: int.tryParse(map['notification_end_hour'] ?? '22') ?? 22,
+      notificationStartHour: int.tryParse(map['notification_start_hour'] ?? '14') ?? 14, // 7:00 AM
+      notificationEndHour: int.tryParse(map['notification_end_hour'] ?? '44') ?? 44, // 10:00 PM
       timeFormat: _parseTimeFormat(map['time_format'] ?? '12'),
     );
   }
@@ -120,13 +120,13 @@ class AppSettings {
   /// Validate notification hours
   bool get hasValidNotificationHours =>
       notificationStartHour >= 0 &&
-      notificationStartHour <= 23 &&
+      notificationStartHour <= 47 &&
       notificationEndHour >= 0 &&
-      notificationEndHour <= 23 &&
+      notificationEndHour <= 47 &&
       notificationStartHour < notificationEndHour;
 
-  /// Get number of notification hours per day
-  int get notificationHoursPerDay => notificationEndHour - notificationStartHour;
+  /// Get number of notification slots per day (30-min increments)
+  int get notificationSlotsPerDay => notificationEndHour - notificationStartHour;
 
   @override
   String toString() {

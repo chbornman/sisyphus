@@ -47,20 +47,20 @@ class Settings extends _$Settings {
     ref.invalidateSelf();
   }
 
-  /// Update notification time range
-  Future<void> updateNotificationHours(int startHour, int endHour) async {
-    if (startHour < 0 || startHour > 23 || endHour < 0 || endHour > 23) {
-      throw ArgumentError('Hours must be between 0 and 23');
+  /// Update notification time range (now uses time indices 0-47)
+  Future<void> updateNotificationHours(int startIndex, int endIndex) async {
+    if (startIndex < 0 || startIndex > 47 || endIndex < 0 || endIndex > 47) {
+      throw ArgumentError('Time indices must be between 0 and 47');
     }
 
-    if (startHour >= endHour) {
-      throw ArgumentError('Start hour must be before end hour');
+    if (startIndex >= endIndex) {
+      throw ArgumentError('Start time must be before end time');
     }
 
     final dbService = ref.read(databaseServiceProvider);
     await dbService.updateSettings({
-      'notification_start_hour': startHour.toString(),
-      'notification_end_hour': endHour.toString(),
+      'notification_start_hour': startIndex.toString(),
+      'notification_end_hour': endIndex.toString(),
     });
 
     // TODO: Reschedule notifications

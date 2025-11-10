@@ -71,14 +71,25 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       const Duration(seconds: 5),
       (timer) {
         if (_pageController.hasClients) {
-          // Get total pages from current moments list
-          // This will be calculated when we have the actual data
-          _currentCarouselPage = (_currentCarouselPage + 1) % 5; // Max 5 moments
-          _pageController.animateToPage(
-            _currentCarouselPage,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
+          // Calculate next page
+          final nextPage = (_currentCarouselPage + 1) % 5; // Max 5 moments
+
+          // If looping back to start, jump instead of animating to prevent long scroll
+          if (nextPage == 0 && _currentCarouselPage == 4) {
+            _pageController.jumpToPage(nextPage);
+            setState(() {
+              _currentCarouselPage = nextPage;
+            });
+          } else {
+            _pageController.animateToPage(
+              nextPage,
+              duration: const Duration(milliseconds: 500),
+              curve: Curves.easeInOut,
+            );
+            setState(() {
+              _currentCarouselPage = nextPage;
+            });
+          }
         }
       },
     );
@@ -113,6 +124,8 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
             _buildMomentsControls(theme),
             SizedBox(height: AppTheme.spacing3),
             _buildMomentsCarousel(theme),
+            SizedBox(height: AppTheme.spacing2),
+            _buildCarouselDots(theme),
           ],
         ),
       ),
@@ -314,7 +327,7 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
       padding: EdgeInsets.all(AppTheme.spacing3),
       decoration: BoxDecoration(
         color: scoreColor.withValues(alpha: scoreColor.a * 0.2),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadius * 2),
+        borderRadius: BorderRadius.circular(AppTheme.borderRadiusLarge),
         border: Border.all(
           color: scoreColor,
           width: 2,
@@ -374,6 +387,30 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
               textAlign: TextAlign.center,
             ),
         ],
+      ),
+    );
+  }
+
+  /// Build navigation dots for carousel
+  /// Always shows 5 dots to indicate the maximum number of moments
+  Widget _buildCarouselDots(ThemeData theme) {
+    return Center(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(5, (index) {
+          final isActive = index == _currentCarouselPage;
+          return Container(
+            margin: EdgeInsets.symmetric(horizontal: AppTheme.spacing1 / 2),
+            width: isActive ? 8 : 6,
+            height: isActive ? 8 : 6,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+          );
+        }),
       ),
     );
   }

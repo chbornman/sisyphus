@@ -236,16 +236,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 });
               }
 
-              // Get notification hours from settings
-              final notificationStartHour = settingsAsync.when(
-                data: (settings) => settings.notificationStartHour,
-                loading: () => 7,
-                error: (_, __) => 7,
+              // Get notification settings
+              final notificationsEnabled = settingsAsync.when(
+                data: (settings) => settings.notificationsEnabled,
+                loading: () => false,
+                error: (_, __) => false,
               );
-              final notificationEndHour = settingsAsync.when(
-                data: (settings) => settings.notificationEndHour,
-                loading: () => 22,
-                error: (_, __) => 22,
+              final notificationStartIndex = settingsAsync.when(
+                data: (settings) => settings.notificationStartHour, // Actually time index now
+                loading: () => 14, // 7:00 AM
+                error: (_, __) => 14,
+              );
+              final notificationEndIndex = settingsAsync.when(
+                data: (settings) => settings.notificationEndHour, // Actually time index now
+                loading: () => 44, // 10:00 PM
+                error: (_, __) => 44,
               );
 
               return RefreshIndicator(
@@ -260,10 +265,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   itemBuilder: (context, index) {
                     // Top spacer item
                     if (index == 0) {
-                      // Check if first timeslot (00:00, hour 0) is outside notification hours
-                      final firstSlotHour = 0;
-                      final isFirstSlotOutsideNotificationHours =
-                          firstSlotHour < notificationStartHour || firstSlotHour >= notificationEndHour;
+                      // Check if first timeslot (00:00, index 0) is outside notification hours
+                      // Only show dark background if notifications are enabled
+                      final firstSlotIndex = 0;
+                      final isFirstSlotOutsideNotificationHours = notificationsEnabled &&
+                          (firstSlotIndex < notificationStartIndex || firstSlotIndex >= notificationEndIndex);
 
                       return Container(
                         height: AppTheme.spacing2,
@@ -278,9 +284,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     // Bottom spacer item
                     if (index == timeslots.length + 1) {
                       // Check if last timeslot (23:30, index 47) is outside notification hours
-                      final lastSlotHour = 23;
-                      final isLastSlotOutsideNotificationHours =
-                          lastSlotHour < notificationStartHour || lastSlotHour >= notificationEndHour;
+                      // Only show dark background if notifications are enabled
+                      final lastSlotIndex = 47;
+                      final isLastSlotOutsideNotificationHours = notificationsEnabled &&
+                          (lastSlotIndex < notificationStartIndex || lastSlotIndex >= notificationEndIndex);
 
                       return Container(
                         height: AppTheme.spacing4,
@@ -300,9 +307,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     final isFutureSlot = isToday && timeslot.timeIndex > currentTimeIndex;
 
                     // Check if this timeslot is outside notification hours
-                    // Convert time index to hour (0-47 -> 0-23)
-                    final slotHour = timeslot.timeIndex ~/ 2;
-                    final isOutsideNotificationHours = slotHour < notificationStartHour || slotHour >= notificationEndHour;
+                    // Only apply styling if notifications are enabled
+                    // Now we can compare time indices directly (both are 0-47)
+                    final isOutsideNotificationHours = notificationsEnabled &&
+                        (timeslot.timeIndex < notificationStartIndex || timeslot.timeIndex >= notificationEndIndex);
 
                     return TimeslotListItem(
                       key: ValueKey('${timeslot.date}_${timeslot.timeIndex}'),

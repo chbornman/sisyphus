@@ -21,7 +21,10 @@ class AppTheme {
 
   // ==================== Dimensions ====================
 
-  static const double borderRadius = 8.0; // Tightly rounded corners
+  // Tiered border radius system for visual hierarchy
+  static const double borderRadius = 12.0; // Base radius - cards, containers, inputs
+  static const double borderRadiusButton = 16.0; // Button radius - more friendly/accessible
+  static const double borderRadiusLarge = 20.0; // Prominent elements - carousel cards
   static const double borderWidth = 1.0;
 
   // Spacing (8px base unit)
@@ -156,6 +159,31 @@ class AppTheme {
         ),
       ),
 
+      // Button themes
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadiusButton),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadiusButton),
+          ),
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadiusButton),
+            ),
+          ),
+        ),
+      ),
+
       // Text theme
       textTheme: const TextTheme(
         displayLarge: headlineLarge,
@@ -244,6 +272,31 @@ class AppTheme {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
           borderSide: BorderSide(color: accentColor, width: 2.0),
+        ),
+      ),
+
+      // Button themes
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadiusButton),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadiusButton),
+          ),
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          shape: WidgetStateProperty.all(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(borderRadiusButton),
+            ),
+          ),
         ),
       ),
 
