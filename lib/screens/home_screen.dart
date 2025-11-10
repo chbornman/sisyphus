@@ -137,6 +137,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return Scaffold(
       appBar: AppBar(
         title: _buildAppBarTitle(selectedDate, theme),
+        // Always show tinted background
+        backgroundColor: theme.colorScheme.surface,
+        surfaceTintColor: theme.colorScheme.primary,
+        elevation: 2,
         actions: [
           // Navigate to previous day
           IconButton(
@@ -251,10 +255,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 },
                 child: ListView.builder(
                   controller: scrollController,
-                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing2),
-                  itemCount: timeslots.length,
+                  padding: EdgeInsets.zero,
+                  itemCount: timeslots.length + 2, // +2 for top and bottom spacers
                   itemBuilder: (context, index) {
-                    final timeslot = timeslots[index];
+                    // Top spacer item
+                    if (index == 0) {
+                      // Check if first timeslot (00:00, hour 0) is outside notification hours
+                      final firstSlotHour = 0;
+                      final isFirstSlotOutsideNotificationHours =
+                          firstSlotHour < notificationStartHour || firstSlotHour >= notificationEndHour;
+
+                      return Container(
+                        height: AppTheme.spacing2,
+                        color: isFirstSlotOutsideNotificationHours
+                            ? theme.colorScheme.onSurface.withValues(
+                                alpha: theme.brightness == Brightness.dark ? 0.1 : 0.05,
+                              )
+                            : null,
+                      );
+                    }
+
+                    // Bottom spacer item
+                    if (index == timeslots.length + 1) {
+                      // Check if last timeslot (23:30, index 47) is outside notification hours
+                      final lastSlotHour = 23;
+                      final isLastSlotOutsideNotificationHours =
+                          lastSlotHour < notificationStartHour || lastSlotHour >= notificationEndHour;
+
+                      return Container(
+                        height: AppTheme.spacing4,
+                        color: isLastSlotOutsideNotificationHours
+                            ? theme.colorScheme.onSurface.withValues(
+                                alpha: theme.brightness == Brightness.dark ? 0.1 : 0.05,
+                              )
+                            : null,
+                      );
+                    }
+
+                    final timeslot = timeslots[index - 1];
                     final currentTimeIndex = isToday ? _currentTimeIndex : -1;
                     final isCurrentSlot = timeslot.timeIndex == currentTimeIndex;
 
@@ -407,9 +445,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (!controller.hasClients) return;
 
     // Calculate scroll position
-    // Each item is timeslotHeight + vertical margin (2 * spacing1)
-    final itemHeight = AppTheme.timeslotHeight + (2 * AppTheme.spacing1);
-    final targetPosition = timeslotIndex * itemHeight;
+    // Account for top spacer (spacing2) plus timeslot height for each item
+    final topSpacerHeight = AppTheme.spacing2;
+    final itemHeight = AppTheme.timeslotHeight;
+    final targetPosition = topSpacerHeight + (timeslotIndex * itemHeight);
 
     // Scroll to position with some offset to center it better
     final maxScroll = controller.position.maxScrollExtent;

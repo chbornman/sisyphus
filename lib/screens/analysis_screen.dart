@@ -91,6 +91,10 @@ class _AnalysisScreenState extends ConsumerState<AnalysisScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insights'),
+        // Always show tinted background
+        backgroundColor: theme.colorScheme.surface,
+        surfaceTintColor: theme.colorScheme.primary,
+        elevation: 2,
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(AppTheme.spacing4),

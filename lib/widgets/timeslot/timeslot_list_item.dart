@@ -160,14 +160,10 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
                 decoration: BoxDecoration(
                   color: widget.isFuture
                       ? theme.colorScheme.onSurface.withValues(alpha: 0.05)
-                      : widget.isOutsideNotificationHours
-                          ? scoreColor.withValues(alpha: scoreColor.a * 0.2)
-                          : scoreColor,
+                      : scoreColor,
                   borderRadius: BorderRadius.circular(AppTheme.borderRadius),
                   border: Border.all(
-                    color: theme.colorScheme.onSurface.withValues(
-                      alpha: widget.isOutsideNotificationHours ? 0.05 : 0.1,
-                    ),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
                     width: AppTheme.borderWidth,
                   ),
                 ),
