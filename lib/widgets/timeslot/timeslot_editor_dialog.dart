@@ -127,7 +127,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
                     // Score badge
                     if (displayScore > 0)
                       Positioned(
-                        right: AppTheme.spacing2,
+                        left: AppTheme.spacing2,
                         top: 0,
                         bottom: 0,
                         child: Center(
@@ -246,8 +246,9 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
     // Calculate delta from start position
     final deltaX = details.localPosition.dx - _dragStartX!;
 
-    // Convert delta to score change (full width = 100 points)
-    final deltaScore = (deltaX / width * 100).round();
+    // Convert delta to score change (2x sensitivity: half width = 100 points)
+    // This makes the gesture more responsive, requiring less drag distance
+    final deltaScore = (deltaX / width * 200).round();
 
     // Apply delta to starting score
     final newScore = (_dragStartScore! + deltaScore).clamp(0, 100);
