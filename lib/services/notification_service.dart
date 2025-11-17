@@ -163,11 +163,22 @@ class NotificationService {
             timeIndex: timeIndex,
           );
           scheduledCount++;
+
+          // Debug: Log first few notifications being scheduled
+          if (scheduledCount <= 3) {
+            debugPrint('   Scheduled notification #$scheduledCount: ${scheduledTime.toString().substring(0, 19)}');
+          }
         }
       }
     }
 
     debugPrint('✅ Notification setup complete: $scheduledCount notifications scheduled');
+
+    // Debug: Show next scheduled notification
+    final pending = await getPendingNotifications();
+    if (pending.isNotEmpty) {
+      debugPrint('   Next notification ID: ${pending.first.id}');
+    }
   }
 
   /// Schedule a single notification at a specific time

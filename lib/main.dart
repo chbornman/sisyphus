@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:flutter_timezone/flutter_timezone.dart';
 import 'app.dart';
 import 'services/notification_service.dart';
 import 'services/database_service.dart';
@@ -15,9 +16,18 @@ Future<void> main() async {
   // Initialize timezone database for notification scheduling
   tz.initializeTimeZones();
 
-  // Set local timezone (you can customize this or use device timezone)
-  final String timeZoneName = DateTime.now().timeZoneName;
-  tz.setLocalLocation(tz.getLocation(timeZoneName));
+  // Get the device's local timezone using flutter_timezone
+  // This ensures notifications are scheduled in the user's actual local time
+  try {
+    final timezoneInfo = await FlutterTimezone.getLocalTimezone();
+    final timeZoneName = timezoneInfo.identifier;
+    tz.setLocalLocation(tz.getLocation(timeZoneName));
+    debugPrint('✅ Timezone set to: $timeZoneName');
+  } catch (e) {
+    debugPrint('⚠️  Error getting device timezone, using UTC: $e');
+    // Fallback to UTC if we can't determine local timezone
+    tz.setLocalLocation(tz.UTC);
+  }
 
   // Initialize notification service
   final notificationService = NotificationService();
