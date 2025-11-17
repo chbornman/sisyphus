@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/notification_status.dart';
 import '../services/notification_health_monitor.dart';
 
 /// Dialog showing detailed notification diagnostics
@@ -36,7 +35,7 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: diagnostics.status.health.color.withOpacity(0.1),
+                color: diagnostics.status.health.color.withValues(alpha: 0.1),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(8),
                 ),
@@ -156,10 +155,10 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.red.withOpacity(0.05),
+                              color: Colors.red.withValues(alpha: 0.05),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Colors.red.withOpacity(0.2),
+                                color: Colors.red.withValues(alpha: 0.2),
                               ),
                             ),
                             child: Row(
@@ -207,7 +206,7 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
               decoration: BoxDecoration(
                 border: Border(
                   top: BorderSide(
-                    color: theme.dividerColor.withOpacity(0.2),
+                    color: theme.dividerColor.withValues(alpha: 0.2),
                   ),
                 ),
               ),
@@ -315,7 +314,7 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
           Icon(
             Icons.lightbulb_outline,
             size: 16,
-            color: theme.colorScheme.primary.withOpacity(0.7),
+            color: theme.colorScheme.primary.withValues(alpha: 0.7),
           ),
           const SizedBox(width: 8),
           Expanded(
@@ -323,7 +322,7 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
               text,
               style: TextStyle(
                 fontSize: 13,
-                color: theme.colorScheme.onSurface.withOpacity(0.8),
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ),

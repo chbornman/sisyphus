@@ -14,7 +14,6 @@ import '../providers/scroll_target_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/database_provider.dart';
 import '../providers/deep_link_provider.dart';
-import '../providers/enhanced_notification_provider.dart';
 import '../features/notifications/services/enhanced_notification_service.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
 import '../widgets/timeslot/timeslot_editor_dialog.dart';

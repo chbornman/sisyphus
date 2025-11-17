@@ -247,3 +247,4 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ---
 
 **Remember:** This is a personal happiness tracking app. The UX should feel smooth, responsive, and delightful. Every interaction should reinforce the user's commitment to tracking their emotional well-being.
+- withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss

@@ -18,14 +18,13 @@ class NotificationStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: status.health.color.withOpacity(0.3),
+          color: status.health.color.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
@@ -67,7 +66,7 @@ class NotificationStatusCard extends StatelessWidget {
                   TextButton(
                     onPressed: onFixTapped,
                     style: TextButton.styleFrom(
-                      backgroundColor: status.health.color.withOpacity(0.1),
+                      backgroundColor: status.health.color.withValues(alpha: 0.1),
                       foregroundColor: status.health.color,
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       shape: RoundedRectangleBorder(
@@ -119,7 +118,7 @@ class NotificationStatusCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
+                  color: Colors.red.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -185,13 +184,13 @@ class NotificationStatusCard extends StatelessWidget {
         Icon(
           icon,
           size: 16,
-          color: theme.colorScheme.onSurface.withOpacity(0.5),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
         ),
         const SizedBox(width: 8),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withOpacity(0.7),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
         const Spacer(),

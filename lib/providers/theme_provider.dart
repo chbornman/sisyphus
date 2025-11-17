@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../core/constants/app_theme.dart';
 import 'settings_provider.dart';
@@ -8,7 +9,7 @@ part 'theme_provider.g.dart';
 /// Provider for light theme
 /// Watches settings to get accent color
 @riverpod
-ThemeData lightTheme(LightThemeRef ref) {
+ThemeData lightTheme(Ref ref) {
   final settingsAsync = ref.watch(settingsProvider);
 
   return settingsAsync.when(
@@ -21,7 +22,7 @@ ThemeData lightTheme(LightThemeRef ref) {
 /// Provider for dark theme
 /// Watches settings to get accent color
 @riverpod
-ThemeData darkTheme(DarkThemeRef ref) {
+ThemeData darkTheme(Ref ref) {
   final settingsAsync = ref.watch(settingsProvider);
 
   return settingsAsync.when(
@@ -34,7 +35,7 @@ ThemeData darkTheme(DarkThemeRef ref) {
 /// Provider for theme mode
 /// Watches settings to get user's theme preference
 @riverpod
-ThemeMode themeMode(ThemeModeRef ref) {
+ThemeMode themeMode(Ref ref) {
   final settingsAsync = ref.watch(settingsProvider);
 
   return settingsAsync.when(

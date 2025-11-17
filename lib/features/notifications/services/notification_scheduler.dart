@@ -13,9 +13,9 @@ import '../models/notification_status.dart';
 class NotificationScheduler {
   final FlutterLocalNotificationsPlugin _plugin;
 
-  // Platform limits
-  static const int _iosNotificationLimit = 64;
-  static const int _androidNotificationLimit = 500;
+  // Platform limits (documented here for reference, not actively used in code)
+  // iOS: 64 scheduled notifications max
+  // Android: 500 scheduled notifications max
 
   // Our conservative limits for reliability
   static const int _maxImmediateNotifications = 40;
@@ -105,9 +105,6 @@ class NotificationScheduler {
     final now = tz.TZDateTime.now(tz.local);
     int scheduledCount = 0;
     DateTime? firstNotificationTime;
-
-    // Calculate how many slots we need per day
-    final slotsPerDay = endHourIndex - startHourIndex;
 
     // Schedule notifications for the next 48 hours
     for (int hour = 0; hour < _immediateHoursAhead && scheduledCount < _maxImmediateNotifications; hour++) {

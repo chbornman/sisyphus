@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../features/notifications/services/enhanced_notification_service.dart';
 import '../features/notifications/models/notification_status.dart';
@@ -9,7 +10,7 @@ part 'enhanced_notification_provider.g.dart';
 /// This is a singleton that provides the same instance throughout the app
 @Riverpod(keepAlive: true)
 EnhancedNotificationService enhancedNotificationService(
-    EnhancedNotificationServiceRef ref) {
+    Ref ref) {
   return EnhancedNotificationService();
 }
 
@@ -95,7 +96,7 @@ class NotificationStatusNotifier extends _$NotificationStatusNotifier {
 /// Provides detailed diagnostic information for troubleshooting
 @riverpod
 Future<NotificationDiagnostics> notificationDiagnostics(
-    NotificationDiagnosticsRef ref) async {
+    Ref ref) async {
   final service = ref.read(enhancedNotificationServiceProvider);
   return await service.getDiagnostics();
 }
@@ -103,7 +104,7 @@ Future<NotificationDiagnostics> notificationDiagnostics(
 /// Provider to check if notifications need attention
 /// Returns true if health is degraded or unhealthy
 @riverpod
-bool notificationsNeedAttention(NotificationsNeedAttentionRef ref) {
+bool notificationsNeedAttention(Ref ref) {
   final statusAsync = ref.watch(notificationStatusNotifierProvider);
 
   return statusAsync.maybeWhen(
@@ -117,7 +118,7 @@ bool notificationsNeedAttention(NotificationsNeedAttentionRef ref) {
 /// Provider for pending notification count
 /// Returns the number of scheduled notifications
 @riverpod
-int pendingNotificationCount(PendingNotificationCountRef ref) {
+int pendingNotificationCount(Ref ref) {
   final statusAsync = ref.watch(notificationStatusNotifierProvider);
 
   return statusAsync.maybeWhen(
