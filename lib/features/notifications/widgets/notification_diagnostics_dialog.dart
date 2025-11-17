@@ -7,12 +7,14 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
   final NotificationDiagnostics diagnostics;
   final VoidCallback? onTestNotification;
   final VoidCallback? onReschedule;
+  final bool hideScheduledCount;
 
   const NotificationDiagnosticsDialog({
     super.key,
     required this.diagnostics,
     this.onTestNotification,
     this.onReschedule,
+    this.hideScheduledCount = false,
   });
 
   @override
@@ -85,25 +87,26 @@ class NotificationDiagnosticsDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Notification counts
-                    _buildSection(
-                      context,
-                      title: 'Notification Breakdown',
-                      children: [
-                        _buildStatRow('Total Pending', '${diagnostics.pendingCount}'),
-                        _buildStatRow('Immediate (48hr)', '${diagnostics.immediateCount}'),
-                        _buildStatRow('Daily Bootstrap', '${diagnostics.bootstrapCount}'),
-                        if (diagnostics.otherCount > 0)
-                          _buildStatRow('Other', '${diagnostics.otherCount}'),
-                        const Divider(height: 16),
-                        _buildStatRow(
-                          'Platform Limit',
-                          '${diagnostics.pendingCount} / ${diagnostics.platformLimit}',
-                          valueColor: diagnostics.isNearLimit ? Colors.orange : null,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
+                    if (!hideScheduledCount) ...[
+                      _buildSection(
+                        context,
+                        title: 'Notification Breakdown',
+                        children: [
+                          _buildStatRow('Total Pending', '${diagnostics.pendingCount}'),
+                          _buildStatRow('Immediate (48hr)', '${diagnostics.immediateCount}'),
+                          _buildStatRow('Daily Bootstrap', '${diagnostics.bootstrapCount}'),
+                          if (diagnostics.otherCount > 0)
+                            _buildStatRow('Other', '${diagnostics.otherCount}'),
+                          const Divider(height: 16),
+                          _buildStatRow(
+                            'Platform Limit',
+                            '${diagnostics.pendingCount} / ${diagnostics.platformLimit}',
+                            valueColor: diagnostics.isNearLimit ? Colors.orange : null,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     // System info
                     _buildSection(

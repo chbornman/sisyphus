@@ -5,8 +5,8 @@ import '../core/utils/time_utils.dart';
 import '../models/app_settings.dart';
 import '../providers/settings_provider.dart';
 import '../providers/enhanced_notification_provider.dart';
-import '../features/notifications/widgets/notification_status_card.dart';
 import '../features/notifications/widgets/notification_diagnostics_dialog.dart';
+import '../features/notifications/models/notification_status.dart';
 
 /// Settings screen - Configure app preferences
 /// Allows users to customize theme, notifications, and accent color
@@ -36,68 +36,129 @@ class SettingsScreen extends ConsumerWidget {
               _buildSectionHeader('Notifications', theme),
               SizedBox(height: AppTheme.spacing2),
 
-              // Notification toggle
-              _NotificationToggle(enabled: settings.notificationsEnabled),
-              SizedBox(height: AppTheme.spacing2),
+              // All notification settings in one card
+              Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(
+                    color: theme.dividerColor.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Padding(
+                  padding: EdgeInsets.all(AppTheme.spacing2),
+                  child: Column(
+                    children: [
+                      // Notification status (always visible)
+                      if (settings.notificationsEnabled)
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final statusAsync = ref.watch(notificationStatusNotifierProvider);
 
-              // Notification status card (show if enabled)
-              if (settings.notificationsEnabled) ...[
-                Consumer(
-                  builder: (context, ref, _) {
-                    final statusAsync = ref.watch(notificationStatusNotifierProvider);
+                            return statusAsync.when(
+                              data: (status) => Column(
+                                children: [
+                                  // Compact status indicator
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        status.health.icon,
+                                        color: status.health.color,
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        status.health.description,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: status.health.color,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      if (status.health == NotificationHealth.unhealthy)
+                                        TextButton(
+                                          onPressed: () async {
+                                            final notifier = ref.read(
+                                              notificationStatusNotifierProvider.notifier,
+                                            );
+                                            await notifier.attemptRecovery();
+                                          },
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                            minimumSize: const Size(0, 30),
+                                          ),
+                                          child: const Text('Fix'),
+                                        )
+                                      else
+                                        TextButton(
+                                          onPressed: () async {
+                                            final diagnostics = await ref.read(
+                                              notificationDiagnosticsProvider.future,
+                                            );
 
-                    return statusAsync.when(
-                      data: (status) => NotificationStatusCard(
-                        status: status,
-                        onFixTapped: () async {
-                          final notifier = ref.read(
-                            notificationStatusNotifierProvider.notifier,
-                          );
-                          await notifier.attemptRecovery();
-                        },
-                        onDetailsTapped: () async {
-                          final diagnostics = await ref.read(
-                            notificationDiagnosticsProvider.future,
-                          );
-
-                          if (context.mounted) {
-                            showDialog(
-                              context: context,
-                              builder: (_) => NotificationDiagnosticsDialog(
-                                diagnostics: diagnostics,
-                                onTestNotification: () {
-                                  ref.read(
-                                    notificationStatusNotifierProvider.notifier,
-                                  ).testNotification();
-                                },
-                                onReschedule: () {
-                                  ref.read(
-                                    notificationStatusNotifierProvider.notifier,
-                                  ).scheduleNotifications(
-                                    startIndex: settings.notificationStartHour,
-                                    endIndex: settings.notificationEndHour,
-                                    enabled: true,
-                                  );
-                                },
+                                            if (context.mounted) {
+                                              showDialog(
+                                                context: context,
+                                                builder: (_) => NotificationDiagnosticsDialog(
+                                                  diagnostics: diagnostics,
+                                                  hideScheduledCount: true,
+                                                  onTestNotification: () {
+                                                    ref.read(
+                                                      notificationStatusNotifierProvider.notifier,
+                                                    ).testNotification();
+                                                  },
+                                                  onReschedule: () {
+                                                    ref.read(
+                                                      notificationStatusNotifierProvider.notifier,
+                                                    ).scheduleNotifications(
+                                                      startIndex: settings.notificationStartHour,
+                                                      endIndex: settings.notificationEndHour,
+                                                      enabled: true,
+                                                    );
+                                                  },
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          style: TextButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                            minimumSize: const Size(0, 30),
+                                          ),
+                                          child: const Text('Details'),
+                                        ),
+                                    ],
+                                  ),
+                                  const Divider(height: 24),
+                                ],
                               ),
+                              loading: () => Column(
+                                children: [
+                                  const LinearProgressIndicator(),
+                                  const SizedBox(height: 16),
+                                  const Divider(),
+                                ],
+                              ),
+                              error: (_, __) => const SizedBox.shrink(),
                             );
-                          }
-                        },
-                      ),
-                      loading: () => const LinearProgressIndicator(),
-                      error: (_, __) => const SizedBox.shrink(),
-                    );
-                  },
-                ),
-                SizedBox(height: AppTheme.spacing2),
+                          },
+                        ),
 
-                // Time range pickers
-                _TimeRangePicker(
-                  startHour: settings.notificationStartHour,
-                  endHour: settings.notificationEndHour,
-                  timeFormat: settings.timeFormat,
+                      // Enable reminders toggle
+                      _NotificationToggle(enabled: settings.notificationsEnabled),
+
+                      // Time range picker (show if enabled)
+                      if (settings.notificationsEnabled) ...[
+                        const Divider(height: 24),
+                        _TimeRangePicker(
+                          startHour: settings.notificationStartHour,
+                          endHour: settings.notificationEndHour,
+                          timeFormat: settings.timeFormat,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
               SizedBox(height: AppTheme.spacing4),
 
               // Appearance Section
