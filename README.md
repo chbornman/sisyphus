@@ -81,6 +81,7 @@ fastlane deliver
 ## Privacy
 
 Sisyphus is privacy-first:
+
 - No account or login required
 - All data stored locally on device
 - No analytics or tracking
