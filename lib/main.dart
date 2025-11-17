@@ -4,7 +4,9 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'app.dart';
-import 'services/notification_service.dart';
+import 'features/notifications/services/enhanced_notification_service.dart';
+import 'features/notifications/services/background_task_handler.dart';
+import 'features/notifications/models/notification_status.dart';
 import 'services/database_service.dart';
 
 /// Application entry point
@@ -29,12 +31,15 @@ Future<void> main() async {
     tz.setLocalLocation(tz.UTC);
   }
 
-  // Initialize notification service
-  final notificationService = NotificationService();
+  // Initialize enhanced notification service
+  final notificationService = EnhancedNotificationService();
   await notificationService.initialize();
 
+  // Initialize background task handler
+  await BackgroundTaskHandler.initialize();
+
   // Auto-reschedule notifications on app startup if enabled
-  // This ensures the 7-day notification window keeps rolling forward
+  // This ensures notifications keep working with our new tiered strategy
   await _autoRescheduleNotifications(notificationService);
 
   // Run app with Riverpod
@@ -42,8 +47,8 @@ Future<void> main() async {
 }
 
 /// Automatically reschedule notifications on app startup if enabled
-/// This keeps the 7-day notification window rolling forward as users open the app
-Future<void> _autoRescheduleNotifications(NotificationService notificationService) async {
+/// Uses enhanced service with health monitoring and automatic recovery
+Future<void> _autoRescheduleNotifications(EnhancedNotificationService notificationService) async {
   try {
     final databaseService = DatabaseService();
     final settings = await databaseService.getSettings();
@@ -51,20 +56,43 @@ Future<void> _autoRescheduleNotifications(NotificationService notificationServic
     if (settings.notificationsEnabled) {
       debugPrint('🔄 Auto-rescheduling notifications on app startup...');
 
-      // Check if permission is still granted
-      final hasPermission = await notificationService.areNotificationsPermitted();
+      // First check health status
+      final healthStatus = await notificationService.performHealthCheck();
+      debugPrint('   Current health: ${healthStatus.health.name}');
 
-      if (hasPermission) {
-        // Reschedule for the next 7 days
-        await notificationService.scheduleNotifications(
-          startIndex: settings.notificationStartHour,
-          endIndex: settings.notificationEndHour,
-        );
-        debugPrint('✅ Auto-reschedule complete');
-      } else {
-        debugPrint('⚠️  Notification permissions revoked, skipping reschedule');
-        // Could optionally disable notifications in settings here
+      // If unhealthy, attempt recovery
+      if (healthStatus.health == NotificationHealth.unhealthy) {
+        debugPrint('🔧 Attempting automatic recovery...');
+        final recovered = await notificationService.attemptRecovery();
+
+        if (!recovered) {
+          debugPrint('⚠️  Recovery failed - notifications may need manual fix');
+          return;
+        }
       }
+
+      // Schedule notifications using enhanced tiered strategy
+      final status = await notificationService.scheduleNotifications(
+        startIndex: settings.notificationStartHour,
+        endIndex: settings.notificationEndHour,
+        enabled: true,
+      );
+
+      debugPrint('✅ Auto-reschedule complete: ${status.scheduledCount} notifications');
+
+      // Log final health status
+      if (status.health != NotificationHealth.healthy) {
+        debugPrint('⚠️  Health status: ${status.health.name}');
+        if (status.lastError != null) {
+          debugPrint('   Error: ${status.lastError}');
+        }
+      }
+
+      // Register background task to keep notifications working
+      await BackgroundTaskHandler.registerPeriodicTask();
+    } else {
+      // Notifications disabled - cancel background task
+      await BackgroundTaskHandler.cancelTask();
     }
   } catch (e) {
     debugPrint('❌ Error during auto-reschedule: $e');

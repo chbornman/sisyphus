@@ -4,6 +4,9 @@ import '../core/constants/app_theme.dart';
 import '../core/utils/time_utils.dart';
 import '../models/app_settings.dart';
 import '../providers/settings_provider.dart';
+import '../providers/enhanced_notification_provider.dart';
+import '../features/notifications/widgets/notification_status_card.dart';
+import '../features/notifications/widgets/notification_diagnostics_dialog.dart';
 
 /// Settings screen - Configure app preferences
 /// Allows users to customize theme, notifications, and accent color
@@ -37,13 +40,64 @@ class SettingsScreen extends ConsumerWidget {
               _NotificationToggle(enabled: settings.notificationsEnabled),
               SizedBox(height: AppTheme.spacing2),
 
-              // Time range pickers (only show if notifications enabled)
-              if (settings.notificationsEnabled)
+              // Notification status card (show if enabled)
+              if (settings.notificationsEnabled) ...[
+                Consumer(
+                  builder: (context, ref, _) {
+                    final statusAsync = ref.watch(notificationStatusNotifierProvider);
+
+                    return statusAsync.when(
+                      data: (status) => NotificationStatusCard(
+                        status: status,
+                        onFixTapped: () async {
+                          final notifier = ref.read(
+                            notificationStatusNotifierProvider.notifier,
+                          );
+                          await notifier.attemptRecovery();
+                        },
+                        onDetailsTapped: () async {
+                          final diagnostics = await ref.read(
+                            notificationDiagnosticsProvider.future,
+                          );
+
+                          if (context.mounted) {
+                            showDialog(
+                              context: context,
+                              builder: (_) => NotificationDiagnosticsDialog(
+                                diagnostics: diagnostics,
+                                onTestNotification: () {
+                                  ref.read(
+                                    notificationStatusNotifierProvider.notifier,
+                                  ).testNotification();
+                                },
+                                onReschedule: () {
+                                  ref.read(
+                                    notificationStatusNotifierProvider.notifier,
+                                  ).scheduleNotifications(
+                                    startIndex: settings.notificationStartHour,
+                                    endIndex: settings.notificationEndHour,
+                                    enabled: true,
+                                  );
+                                },
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      loading: () => const LinearProgressIndicator(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+                SizedBox(height: AppTheme.spacing2),
+
+                // Time range pickers
                 _TimeRangePicker(
                   startHour: settings.notificationStartHour,
                   endHour: settings.notificationEndHour,
                   timeFormat: settings.timeFormat,
                 ),
+              ],
               SizedBox(height: AppTheme.spacing4),
 
               // Appearance Section

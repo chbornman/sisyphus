@@ -316,8 +316,9 @@ class _TimeslotListItemState extends ConsumerState<TimeslotListItem>
       widget.timeslot.description!,
       style: theme.textTheme.bodyMedium?.copyWith(
         color: theme.colorScheme.onSurface.withValues(alpha: 0.9),
+        height: 1.4, // Slightly tighter line height for better fit
       ),
-      maxLines: 1,
+      maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
   }

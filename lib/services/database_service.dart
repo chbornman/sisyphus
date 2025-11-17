@@ -261,6 +261,73 @@ class DatabaseService {
     });
   }
 
+  // ==================== Notification Status Operations ====================
+
+  /// Get notification status from settings
+  Future<Map<String, String>> getNotificationStatus() async {
+    final db = await _dbHelper.database;
+
+    // Get notification-related settings
+    final results = await db.query(
+      'settings',
+      where: 'key IN (?, ?, ?, ?, ?, ?)',
+      whereArgs: [
+        'scheduled_count',
+        'next_notification_time',
+        'last_scheduled_at',
+        'last_bootstrap_at',
+        'last_error',
+        'has_permission',
+      ],
+    );
+
+    final statusMap = <String, String>{};
+    for (final row in results) {
+      statusMap[row['key'] as String] = row['value'] as String;
+    }
+
+    return statusMap;
+  }
+
+  /// Save notification status to settings
+  Future<void> saveNotificationStatus(Map<String, String> status) async {
+    final db = await _dbHelper.database;
+
+    await db.transaction((txn) async {
+      for (final entry in status.entries) {
+        await txn.insert(
+          'settings',
+          {
+            'key': entry.key,
+            'value': entry.value,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  /// Update a single setting (nullable version)
+  Future<void> updateSettingNullable(String key, String? value) async {
+    if (value == null) {
+      // Delete the setting if value is null
+      final db = await _dbHelper.database;
+      await db.delete(
+        'settings',
+        where: 'key = ?',
+        whereArgs: [key],
+      );
+    } else {
+      // Update the setting
+      final db = await _dbHelper.database;
+      await db.insert(
+        'settings',
+        {'key': key, 'value': value},
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
   // ==================== Utility Operations ====================
 
   /// Delete all data (useful for testing or reset)

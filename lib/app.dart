@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/navigation/navigation_service.dart';
 import 'providers/theme_provider.dart';
 import 'screens/home_screen.dart';
 
@@ -18,6 +19,7 @@ class SisyphusApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Sisyphus',
       debugShowCheckedModeBanner: false,
+      navigatorKey: NavigationService.navigatorKey,
 
       // Theme configuration
       theme: lightThemeData,

@@ -5,14 +5,19 @@ import 'package:intl/intl.dart';
 import '../core/constants/app_constants.dart';
 import '../core/constants/app_theme.dart';
 import '../core/utils/time_utils.dart';
-import '../core/utils/date_utils.dart';
+import '../core/utils/date_utils.dart' show AppDateUtils;
+import '../models/timeslot.dart';
 import '../providers/timeslot_provider.dart';
 import '../providers/selected_date_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/scroll_target_provider.dart';
 import '../providers/notification_provider.dart';
 import '../providers/database_provider.dart';
+import '../providers/deep_link_provider.dart';
+import '../providers/enhanced_notification_provider.dart';
+import '../features/notifications/services/enhanced_notification_service.dart';
 import '../widgets/timeslot/timeslot_list_item.dart';
+import '../widgets/timeslot/timeslot_editor_dialog.dart';
 import '../widgets/welcome_modal.dart';
 import 'analysis_screen.dart';
 import 'settings_screen.dart';
@@ -58,6 +63,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     // Show welcome modal if first launch
     _checkAndShowWelcomeModal();
+
+    // Set up notification tap handler
+    _setupNotificationHandler();
+
+    // Handle deep links after frame is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForDeepLink();
+    });
   }
 
   /// Initialize and reschedule notifications on app startup
@@ -536,5 +549,114 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeInOut,
     );
+  }
+
+  /// Set up notification tap handler
+  void _setupNotificationHandler() {
+    // Set the callback for notification taps
+    EnhancedNotificationService.onNotificationTap = (timeIndex) {
+      // Navigate to today first if not already there
+      final currentDate = ref.read(selectedDateProvider);
+      final todayDate = DateTime.now();
+      final todayString = AppDateUtils.toDbFormat(todayDate);
+
+      if (currentDate != todayString) {
+        ref.read(selectedDateProvider.notifier).selectDate(todayDate);
+      }
+
+      // Schedule navigation after frame
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateToTimeslotAndOpenEditor(timeIndex);
+      });
+    };
+  }
+
+  /// Check for deep link requests
+  void _checkForDeepLink() {
+    // Listen for deep link requests
+    ref.listen<DeepLinkRequest?>(deepLinkNotifierProvider, (previous, next) {
+      if (next != null) {
+        // Navigate to today if needed
+        final currentDate = ref.read(selectedDateProvider);
+        final todayDate = DateTime.now();
+        final todayString = AppDateUtils.toDbFormat(todayDate);
+
+        if (currentDate != todayString) {
+          ref.read(selectedDateProvider.notifier).selectDate(todayDate);
+        }
+
+        // Navigate to the timeslot
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _navigateToTimeslotAndOpenEditor(next.timeIndex);
+
+          // Clear the deep link request
+          ref.read(deepLinkNotifierProvider.notifier).clear();
+        });
+      }
+    });
+  }
+
+  /// Navigate to a specific timeslot and open its editor
+  Future<void> _navigateToTimeslotAndOpenEditor(int timeIndex) async {
+    // Get the scroll controller for today
+    final today = AppDateUtils.toDbFormat(DateTime.now());
+    final controller = _getScrollController(today);
+
+    // Wait a bit for the list to be built if needed
+    await Future.delayed(const Duration(milliseconds: 100));
+
+    if (controller.hasClients) {
+      // Scroll to the timeslot
+      _scrollToTimeslot(controller, timeIndex);
+
+      // Wait for scroll to complete
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      // Open the editor dialog
+      if (mounted) {
+        _openTimeslotEditor(timeIndex);
+      }
+    }
+  }
+
+  /// Open the timeslot editor for a specific time index
+  void _openTimeslotEditor(int timeIndex) {
+    final timeslotsAsync = ref.read(timeslotsProvider);
+
+    timeslotsAsync.whenData((timeslots) {
+      // Find the timeslot
+      final timeslot = timeslots.firstWhere(
+        (t) => t.timeIndex == timeIndex,
+        orElse: () {
+          // Create a new timeslot if it doesn't exist
+          final today = DateTime.now();
+          final dateString = AppDateUtils.toDbFormat(today);
+
+          return Timeslot(
+            date: dateString,
+            timeIndex: timeIndex,
+            time: TimeUtils.indexToTime(timeIndex),
+            happinessScore: 0,
+            createdAt: today,
+            updatedAt: today,
+          );
+        },
+      );
+
+      // Show the editor dialog
+      showDialog(
+        context: context,
+        builder: (context) => TimeslotEditorDialog(
+          timeslot: timeslot,
+          onSave: (description, score) {
+            ref.read(timeslotsProvider.notifier).updateTimeslot(
+                  timeIndex,
+                  score,
+                  description,
+                );
+          },
+        ),
+      );
+    });
   }
 }

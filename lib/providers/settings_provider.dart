@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/app_settings.dart';
 import '../core/utils/color_utils.dart';
+import '../features/notifications/models/notification_status.dart';
+import '../features/notifications/services/background_task_handler.dart';
 import 'database_provider.dart';
-import 'notification_provider.dart';
+import 'enhanced_notification_provider.dart';
 
 part 'settings_provider.g.dart';
 
@@ -37,10 +39,10 @@ class Settings extends _$Settings {
   }
 
   /// Toggle notifications on/off
-  /// Uses optimistic updates for instant UI feedback
+  /// Uses optimistic updates for instant UI feedback with enhanced health monitoring
   Future<void> toggleNotifications(bool enabled) async {
     final dbService = ref.read(databaseServiceProvider);
-    final notificationService = ref.read(notificationServiceProvider);
+    final notificationService = ref.read(enhancedNotificationServiceProvider);
 
     // OPTIMISTIC UPDATE: Update UI state immediately
     // Get current state and create updated version
@@ -57,20 +59,35 @@ class Settings extends _$Settings {
       final hasPermission = await notificationService.requestPermissions();
 
       if (hasPermission) {
-        // Schedule notifications in background (don't await)
         // Get current settings to know the time range
         final settings = await dbService.getSettings();
 
-        // Fire and forget - schedule notifications without blocking
-        // This prevents UI from freezing while scheduling 100+ notifications
-        notificationService.scheduleNotifications(
+        // Schedule with enhanced service - includes health monitoring
+        final status = await notificationService.scheduleNotifications(
           startIndex: settings.notificationStartHour,
           endIndex: settings.notificationEndHour,
-        ).catchError((error) {
-          // Log error but don't crash the app
-          // The notifications will be rescheduled next time the app starts
-          debugPrint('Error scheduling notifications: $error');
-        });
+          enabled: true,
+        );
+
+        // Check if scheduling was successful
+        if (status.health == NotificationHealth.unhealthy) {
+          debugPrint('⚠️  Notification scheduling unhealthy: ${status.lastError}');
+
+          // Attempt recovery
+          final recovered = await notificationService.attemptRecovery();
+          if (!recovered) {
+            // Show user that notifications need attention
+            debugPrint('❌ Recovery failed - notifications need manual fix');
+          }
+        } else {
+          debugPrint('✅ Notifications scheduled: ${status.scheduledCount}');
+        }
+
+        // Register background task to maintain notifications
+        await BackgroundTaskHandler.registerPeriodicTask();
+
+        // Update notification status provider
+        ref.invalidate(notificationStatusNotifierProvider);
       } else {
         // Permission denied - revert the optimistic update
         await dbService.updateSetting('notifications_enabled', 'false');
@@ -79,11 +96,16 @@ class Settings extends _$Settings {
     } else {
       // Cancel all notifications (quick operation, safe to await)
       await notificationService.cancelAllNotifications();
+
+      // Cancel background task
+      await BackgroundTaskHandler.cancelTask();
+
+      ref.invalidate(notificationStatusNotifierProvider);
     }
   }
 
   /// Update notification time range (now uses time indices 0-47)
-  /// Uses optimistic updates for instant UI feedback
+  /// Uses optimistic updates for instant UI feedback with enhanced health monitoring
   Future<void> updateNotificationHours(int startIndex, int endIndex) async {
     if (startIndex < 0 || startIndex > 47 || endIndex < 0 || endIndex > 47) {
       throw ArgumentError('Time indices must be between 0 and 47');
@@ -94,7 +116,7 @@ class Settings extends _$Settings {
     }
 
     final dbService = ref.read(databaseServiceProvider);
-    final notificationService = ref.read(notificationServiceProvider);
+    final notificationService = ref.read(enhancedNotificationServiceProvider);
 
     // OPTIMISTIC UPDATE: Update UI state immediately
     final currentState = await future;
@@ -112,13 +134,25 @@ class Settings extends _$Settings {
     // Reschedule notifications if they're currently enabled
     final settings = await dbService.getSettings();
     if (settings.notificationsEnabled) {
-      // Fire and forget - reschedule without blocking UI
-      notificationService.rescheduleNotifications(
+      // Schedule with enhanced service
+      final status = await notificationService.scheduleNotifications(
         startIndex: startIndex,
         endIndex: endIndex,
-      ).catchError((error) {
-        debugPrint('Error rescheduling notifications: $error');
-      });
+        enabled: true,
+      );
+
+      debugPrint('✅ Rescheduled: ${status.scheduledCount} notifications');
+
+      // Check health and log if issues
+      if (status.health != NotificationHealth.healthy) {
+        debugPrint('⚠️  Health: ${status.health.name}');
+        if (status.lastError != null) {
+          debugPrint('   Error: ${status.lastError}');
+        }
+      }
+
+      // Update notification status provider
+      ref.invalidate(notificationStatusNotifierProvider);
     }
   }
 
