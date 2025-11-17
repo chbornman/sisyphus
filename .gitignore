@@ -44,6 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# iOS/Xcode build artifacts
+ios/build/
+ios/*.ipa
+ios/*.app.dSYM.zip
+
 # Fastlane
 **/fastlane/report.xml
 **/fastlane/Preview.html
