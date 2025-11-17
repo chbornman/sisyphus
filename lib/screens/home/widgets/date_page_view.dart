@@ -9,7 +9,7 @@ import 'timeslot_list.dart';
 
 /// Manages the animated date transitions with swipe gestures
 /// Wraps the timeslot list in an AnimatedSwitcher for smooth day navigation
-class DatePageView extends ConsumerWidget {
+class DatePageView extends ConsumerStatefulWidget {
   final String selectedDate;
   final bool isToday;
   final int swipeDirection;
@@ -39,17 +39,35 @@ class DatePageView extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DatePageView> createState() => _DatePageViewState();
+}
+
+class _DatePageViewState extends ConsumerState<DatePageView> {
+  /// Track which scroll target we've already processed to avoid re-scrolling
+  int? _processedScrollTarget;
+
+  /// Track if we've performed the initial scroll for this date
+  bool _hasScrolledForCurrentDate = false;
+  String? _lastScrolledDate;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final timeslotsAsync = ref.watch(timeslotsProvider);
     final settingsAsync = ref.watch(settingsProvider);
+
+    // Reset scroll tracking when date changes
+    if (_lastScrolledDate != widget.selectedDate) {
+      _hasScrolledForCurrentDate = false;
+      _lastScrolledDate = widget.selectedDate;
+    }
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       transitionBuilder: (child, animation) {
         // Slide transition based on swipe direction
         final offsetAnimation = Tween<Offset>(
-          begin: Offset(swipeDirection.toDouble(), 0.0),
+          begin: Offset(widget.swipeDirection.toDouble(), 0.0),
           end: Offset.zero,
         ).animate(CurvedAnimation(
           parent: animation,
@@ -62,7 +80,7 @@ class DatePageView extends ConsumerWidget {
         );
       },
       child: KeyedSubtree(
-        key: ValueKey(selectedDate), // Key ensures animation triggers on date change
+        key: ValueKey(widget.selectedDate), // Key ensures animation triggers on date change
         child: timeslotsAsync.when(
           data: (timeslots) =>
               _buildTimeslotList(ref, timeslots, settingsAsync),
@@ -80,21 +98,31 @@ class DatePageView extends ConsumerWidget {
     AsyncValue<dynamic> settingsAsync,
   ) {
     // Get scroll controller for this specific date
-    final scrollController = getScrollController(selectedDate);
+    final scrollController = widget.getScrollController(widget.selectedDate);
 
-    // Scroll to target timeslot if navigating from analysis screen
-    if (scrollTarget != null) {
+    // Handle scroll target from analysis screen navigation
+    // Only scroll if we have a new target that we haven't processed yet
+    if (widget.scrollTarget != null &&
+        widget.scrollTarget != _processedScrollTarget) {
+      _processedScrollTarget = widget.scrollTarget;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        scrollToTimeslot(scrollController, scrollTarget!);
-        // Clear the scroll target after using it
-        onScrollTargetUsed();
+        if (mounted && scrollController.hasClients) {
+          widget.scrollToTimeslot(scrollController, widget.scrollTarget!);
+          // Clear the scroll target after using it
+          widget.onScrollTargetUsed();
+        }
       });
     }
-    // Auto-scroll to current time on very first app load (only if viewing today)
-    else if (isToday && !hasPerformedInitialScroll) {
+    // Auto-scroll to current time on first load of today's view
+    else if (widget.isToday &&
+             !widget.hasPerformedInitialScroll &&
+             !_hasScrolledForCurrentDate) {
+      _hasScrolledForCurrentDate = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        scrollToCurrentTime(scrollController);
-        onInitialScrollPerformed();
+        if (mounted && scrollController.hasClients) {
+          widget.scrollToCurrentTime(scrollController);
+          widget.onInitialScrollPerformed();
+        }
       });
     }
 
@@ -118,8 +146,8 @@ class DatePageView extends ConsumerWidget {
     return TimeslotList(
       timeslots: timeslots,
       scrollController: scrollController,
-      currentTimeIndex: isToday ? currentTimeIndex : -1,
-      isToday: isToday,
+      currentTimeIndex: widget.isToday ? widget.currentTimeIndex : -1,
+      isToday: widget.isToday,
       notificationsEnabled: notificationsEnabled,
       notificationStartIndex: notificationStartIndex,
       notificationEndIndex: notificationEndIndex,
