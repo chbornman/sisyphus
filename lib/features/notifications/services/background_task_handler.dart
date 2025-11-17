@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -16,25 +17,31 @@ class BackgroundTaskHandler {
   static const String taskName = 'notification-refresh';
   static const String uniqueName = 'sisyphus-notification-refresh';
 
-  /// Initialize WorkManager for background tasks
+  /// Initialize WorkManager for background tasks (Android only)
   static Future<void> initialize() async {
-    await Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: kDebugMode,
-    );
-
-    debugPrint('🔧 WorkManager initialized');
+    // WorkManager is Android-only - skip on iOS
+    if (!kIsWeb && Platform.isAndroid) {
+      await Workmanager().initialize(
+        callbackDispatcher,
+        isInDebugMode: kDebugMode,
+      );
+      debugPrint('🔧 WorkManager initialized');
+    } else {
+      debugPrint('ℹ️  WorkManager skipped (iOS/Web platform)');
+    }
   }
 
-  /// Register periodic task to refresh notifications
+  /// Register periodic task to refresh notifications (Android only)
   static Future<void> registerPeriodicTask() async {
-    try {
-      // Cancel existing task if any
-      await Workmanager().cancelByUniqueName(uniqueName);
+    // Only register on Android
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        // Cancel existing task if any
+        await Workmanager().cancelByUniqueName(uniqueName);
 
-      // Register new periodic task
-      // Runs every 12 hours (minimum is 15 minutes on Android)
-      await Workmanager().registerPeriodicTask(
+        // Register new periodic task
+        // Runs every 12 hours (minimum is 15 minutes on Android)
+        await Workmanager().registerPeriodicTask(
         uniqueName,
         taskName,
         frequency: const Duration(hours: 12),
@@ -50,16 +57,21 @@ class BackgroundTaskHandler {
         backoffPolicyDelay: const Duration(minutes: 30),
       );
 
-      debugPrint('✅ Background task registered: runs every 12 hours');
-    } catch (e) {
-      debugPrint('❌ Failed to register background task: $e');
+        debugPrint('✅ Background task registered: runs every 12 hours');
+      } catch (e) {
+        debugPrint('❌ Failed to register background task: $e');
+      }
+    } else {
+      debugPrint('ℹ️  Background task registration skipped (iOS/Web)');
     }
   }
 
-  /// Cancel background task
+  /// Cancel background task (Android only)
   static Future<void> cancelTask() async {
-    await Workmanager().cancelByUniqueName(uniqueName);
-    debugPrint('🔕 Background task cancelled');
+    if (!kIsWeb && Platform.isAndroid) {
+      await Workmanager().cancelByUniqueName(uniqueName);
+      debugPrint('🔕 Background task cancelled');
+    }
   }
 }
 

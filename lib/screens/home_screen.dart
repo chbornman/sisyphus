@@ -65,11 +65,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     // Set up notification tap handler
     _setupNotificationHandler();
-
-    // Handle deep links after frame is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkForDeepLink();
-    });
   }
 
   /// Initialize and reschedule notifications on app startup
@@ -210,6 +205,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final timeslotsAsync = ref.watch(timeslotsProvider);
     final settingsAsync = ref.watch(settingsProvider);
     final scrollTarget = ref.watch(scrollTargetProvider);
+
+    // Listen for deep link requests
+    ref.listen<DeepLinkRequest?>(deepLinkNotifierProvider, (previous, next) {
+      if (next != null) {
+        // Navigate to today if needed
+        final currentDate = ref.read(selectedDateProvider);
+        final todayDate = DateTime.now();
+        final todayString = AppDateUtils.toDbFormat(todayDate);
+
+        if (currentDate != todayString) {
+          ref.read(selectedDateProvider.notifier).selectDate(todayDate);
+        }
+
+        // Navigate to the timeslot
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _navigateToTimeslotAndOpenEditor(next.timeIndex);
+
+          // Clear the deep link request
+          ref.read(deepLinkNotifierProvider.notifier).clear();
+        });
+      }
+    });
 
     // Check if viewing today
     final isToday = AppDateUtils.isToday(selectedDate);
@@ -570,30 +587,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     };
   }
 
-  /// Check for deep link requests
-  void _checkForDeepLink() {
-    // Listen for deep link requests
-    ref.listen<DeepLinkRequest?>(deepLinkNotifierProvider, (previous, next) {
-      if (next != null) {
-        // Navigate to today if needed
-        final currentDate = ref.read(selectedDateProvider);
-        final todayDate = DateTime.now();
-        final todayString = AppDateUtils.toDbFormat(todayDate);
-
-        if (currentDate != todayString) {
-          ref.read(selectedDateProvider.notifier).selectDate(todayDate);
-        }
-
-        // Navigate to the timeslot
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _navigateToTimeslotAndOpenEditor(next.timeIndex);
-
-          // Clear the deep link request
-          ref.read(deepLinkNotifierProvider.notifier).clear();
-        });
-      }
-    });
-  }
 
   /// Navigate to a specific timeslot and open its editor
   Future<void> _navigateToTimeslotAndOpenEditor(int timeIndex) async {
