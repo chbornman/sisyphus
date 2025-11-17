@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/constants/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/time_utils.dart';
 import '../../models/app_settings.dart';
@@ -83,7 +83,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
     return Dialog(
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
-        padding: EdgeInsets.all(AppTheme.spacing6),
+        padding: EdgeInsets.all(AppSpacing.spacing6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,7 +92,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
             Row(
               children: [
                 Icon(Icons.edit_note, color: theme.colorScheme.primary),
-                SizedBox(width: AppTheme.spacing2),
+                SizedBox(width: AppSpacing.spacing2),
                 Text(formattedTime, style: theme.textTheme.headlineSmall),
                 const Spacer(),
                 IconButton(
@@ -102,24 +102,24 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
               ],
             ),
 
-            SizedBox(height: AppTheme.spacing4),
+            SizedBox(height: AppSpacing.spacing4),
 
             // Happiness score slider bar (visual slider like main page)
             Text('Happiness Score', style: theme.textTheme.labelLarge),
-            SizedBox(height: AppTheme.spacing3),
+            SizedBox(height: AppSpacing.spacing3),
 
             GestureDetector(
               onHorizontalDragStart: _handleDragStart,
               onHorizontalDragUpdate: _handleDragUpdate,
               onHorizontalDragEnd: _handleDragEnd,
               child: Container(
-                height: AppTheme.timeslotHeight - (AppTheme.spacing1 * 2), // 56 - 8 = 48px
+                height: AppSpacing.timeslotHeight - (AppSpacing.spacing1 * 2), // 56 - 8 = 48px
                 decoration: BoxDecoration(
                   color: scoreColor,
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
                   border: Border.all(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                    width: AppTheme.borderWidth,
+                    width: AppSpacing.borderWidth,
                   ),
                 ),
                 child: Stack(
@@ -127,7 +127,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
                     // Score badge
                     if (displayScore > 0)
                       Positioned(
-                        left: AppTheme.spacing2,
+                        left: AppSpacing.spacing2,
                         top: 0,
                         bottom: 0,
                         child: Center(
@@ -150,11 +150,11 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
               ),
             ),
 
-            SizedBox(height: AppTheme.spacing6),
+            SizedBox(height: AppSpacing.spacing6),
 
             // Description input
             Text('What were you doing?', style: theme.textTheme.labelLarge),
-            SizedBox(height: AppTheme.spacing2),
+            SizedBox(height: AppSpacing.spacing2),
 
             TextField(
               controller: _descriptionController,
@@ -165,13 +165,13 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
                   color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+                  borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
                 ),
               ),
               textCapitalization: TextCapitalization.sentences,
             ),
 
-            SizedBox(height: AppTheme.spacing6),
+            SizedBox(height: AppSpacing.spacing6),
 
             // Action buttons
             Row(
@@ -181,7 +181,7 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
-                SizedBox(width: AppTheme.spacing2),
+                SizedBox(width: AppSpacing.spacing2),
                 FilledButton(onPressed: _handleSave, child: const Text('Save')),
               ],
             ),
@@ -202,15 +202,15 @@ class _TimeslotEditorDialogState extends ConsumerState<TimeslotEditorDialog> {
   Widget _buildScoreBadge(int score, ThemeData theme) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: AppTheme.spacing2,
-        vertical: AppTheme.spacing1,
+        horizontal: AppSpacing.spacing2,
+        vertical: AppSpacing.spacing1,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
         border: Border.all(
           color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-          width: AppTheme.borderWidth,
+          width: AppSpacing.borderWidth,
         ),
       ),
       child: SizedBox(

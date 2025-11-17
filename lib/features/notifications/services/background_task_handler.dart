@@ -5,7 +5,7 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
-import '../../../services/database_service.dart';
+import '../../../services/database/database_service.dart';
 import 'enhanced_notification_service.dart';
 import '../models/notification_status.dart';
 

@@ -7,7 +7,7 @@ import 'app.dart';
 import 'features/notifications/services/enhanced_notification_service.dart';
 import 'features/notifications/services/background_task_handler.dart';
 import 'features/notifications/models/notification_status.dart';
-import 'services/database_service.dart';
+import 'services/database/database_service.dart';
 
 /// Application entry point
 /// Initializes Riverpod state management and starts the app

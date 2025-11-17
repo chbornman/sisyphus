@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/notification_status.dart';
-import '../../../services/database_service.dart';
+import '../../../services/database/database_service.dart';
 
 /// Monitors and reports on the health of the notification system
 /// Provides diagnostics, recovery suggestions, and automatic healing

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../core/constants/app_theme.dart';
+import '../core/theme/spacing.dart';
 import '../providers/settings_provider.dart';
 import '../providers/notification_provider.dart';
 
@@ -20,11 +20,11 @@ class WelcomeModal extends ConsumerWidget {
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppTheme.borderRadius),
+        borderRadius: BorderRadius.circular(AppSpacing.borderRadius),
       ),
       child: Container(
         constraints: const BoxConstraints(maxWidth: 400),
-        padding: EdgeInsets.all(AppTheme.spacing4),
+        padding: EdgeInsets.all(AppSpacing.spacing4),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -34,7 +34,7 @@ class WelcomeModal extends ConsumerWidget {
               width: 56,
               height: 56,
             ),
-            SizedBox(height: AppTheme.spacing3),
+            SizedBox(height: AppSpacing.spacing3),
 
             // Title
             Text(
@@ -44,7 +44,7 @@ class WelcomeModal extends ConsumerWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: AppTheme.spacing2),
+            SizedBox(height: AppSpacing.spacing2),
 
             // Body text
             Text(
@@ -55,7 +55,7 @@ class WelcomeModal extends ConsumerWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: AppTheme.spacing4),
+            SizedBox(height: AppSpacing.spacing4),
 
             // Enable Reminders Button
             SizedBox(
@@ -65,12 +65,12 @@ class WelcomeModal extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: accentColor,
                   foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: AppTheme.spacing2),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.spacing2),
                 ),
                 child: const Text('Enable Reminders'),
               ),
             ),
-            SizedBox(height: AppTheme.spacing2),
+            SizedBox(height: AppSpacing.spacing2),
 
             // Maybe Later Button
             TextButton(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../core/constants/app_theme.dart';
+import '../core/theme/theme_data.dart';
 import 'settings_provider.dart';
 
 part 'theme_provider.g.dart';
@@ -13,9 +13,9 @@ ThemeData lightTheme(Ref ref) {
   final settingsAsync = ref.watch(settingsProvider);
 
   return settingsAsync.when(
-    data: (settings) => AppTheme.lightTheme(settings.accentColor),
-    loading: () => AppTheme.lightTheme(const Color(0xFF6366F1)), // Default indigo
-    error: (_, __) => AppTheme.lightTheme(const Color(0xFF6366F1)),
+    data: (settings) => AppThemeData.lightTheme(settings.accentColor),
+    loading: () => AppThemeData.lightTheme(const Color(0xFF6366F1)), // Default indigo
+    error: (_, __) => AppThemeData.lightTheme(const Color(0xFF6366F1)),
   );
 }
 
@@ -26,9 +26,9 @@ ThemeData darkTheme(Ref ref) {
   final settingsAsync = ref.watch(settingsProvider);
 
   return settingsAsync.when(
-    data: (settings) => AppTheme.darkTheme(settings.accentColor),
-    loading: () => AppTheme.darkTheme(const Color(0xFF6366F1)), // Default indigo
-    error: (_, __) => AppTheme.darkTheme(const Color(0xFF6366F1)),
+    data: (settings) => AppThemeData.darkTheme(settings.accentColor),
+    loading: () => AppThemeData.darkTheme(const Color(0xFF6366F1)), // Default indigo
+    error: (_, __) => AppThemeData.darkTheme(const Color(0xFF6366F1)),
   );
 }
 

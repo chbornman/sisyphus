@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../services/database_service.dart';
+import '../../../services/database/database_service.dart';
 import '../../../core/navigation/timeslot_navigator.dart';
 import '../../../core/navigation/navigation_service.dart';
 import '../models/notification_status.dart';

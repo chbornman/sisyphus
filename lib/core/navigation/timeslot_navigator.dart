@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/timeslot.dart';
 import '../../providers/timeslot_provider.dart';
 import '../../widgets/timeslot/timeslot_editor_dialog.dart';
-import '../../core/constants/app_theme.dart';
+import '../../core/theme/spacing.dart';
 import '../../core/utils/time_utils.dart';
 import '../../core/utils/date_utils.dart';
 
@@ -61,8 +61,8 @@ class TimeslotNavigator {
 
     // Calculate scroll position
     // Account for top spacer plus timeslot height for each item
-    final topSpacerHeight = AppTheme.spacing2;
-    final itemHeight = AppTheme.timeslotHeight;
+    final topSpacerHeight = AppSpacing.spacing2;
+    final itemHeight = AppSpacing.timeslotHeight;
     final targetPosition = topSpacerHeight + (timeslotIndex * itemHeight);
 
     // Scroll to position with some offset to center it better
